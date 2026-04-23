@@ -1,5 +1,8 @@
 {% extends 'base.html' %}
 
+{% block page_title %}Request Details{% endblock %}
+{% block page_subtitle %}View request information{% endblock %}
+
 {% block content %}
 <div class="container mx-auto px-4 py-6 max-w-6xl">
     <!-- Header -->
@@ -319,7 +322,19 @@ function submitAssignment() {
         return;
     }
 
-    if (confirm('Confirm assignment? This will complete the request.')) {
+    // Use confirm modal instead of browser confirm
+    const modal = document.getElementById('confirmModal');
+    modal.classList.remove('hidden');
+    document.getElementById('confirmModalTitle').textContent = 'Confirm Assignment';
+    document.getElementById('confirmModalMessage').textContent = 'This will assign the selected asset and complete the request. Continue?';
+    
+    // Set one-time click handler
+    const confirmBtn = modal.querySelector('button:last-child');
+    const newBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+    
+    newBtn.onclick = function() {
+        modal.classList.add('hidden');
         showLoading();
         $.ajax({
             url: "{% url 'requests:assign_equipment' req.id %}",
@@ -335,7 +350,7 @@ function submitAssignment() {
                 showToast(err.responseJSON?.message || 'Failed to assign asset', 'error');
             }
         });
-    }
+    };
 }
 
 // Send to Maintenance
@@ -345,7 +360,17 @@ function submitMaintenance() {
         return;
     }
 
-    if (confirm('Send asset for repair?')) {
+    const modal = document.getElementById('confirmModal');
+    modal.classList.remove('hidden');
+    document.getElementById('confirmModalTitle').textContent = 'Send for Repair';
+    document.getElementById('confirmModalMessage').textContent = 'Send this asset to vendor for repair?';
+    
+    const confirmBtn = modal.querySelector('button:last-child');
+    const newBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+    
+    newBtn.onclick = function() {
+        modal.classList.add('hidden');
         showLoading();
         $.ajax({
             url: "{% url 'requests:process_maintenance' req.id %}",
@@ -361,7 +386,7 @@ function submitMaintenance() {
                 showToast(err.responseJSON?.message || 'Failed to process', 'error');
             }
         });
-    }
+    };
 }
 
 // Complete Repair
@@ -371,7 +396,17 @@ function completeRepair() {
         return;
     }
 
-    if (confirm('Complete repair and return to employee?')) {
+    const modal = document.getElementById('confirmModal');
+    modal.classList.remove('hidden');
+    document.getElementById('confirmModalTitle').textContent = 'Complete Repair';
+    document.getElementById('confirmModalMessage').textContent = 'Complete repair and return asset to employee?';
+    
+    const confirmBtn = modal.querySelector('button:last-child');
+    const newBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+    
+    newBtn.onclick = function() {
+        modal.classList.add('hidden');
         showLoading();
         $.ajax({
             url: "{% url 'requests:complete_maintenance' req.id %}",
@@ -387,11 +422,60 @@ function completeRepair() {
                 showToast(err.responseJSON?.message || 'Failed to complete', 'error');
             }
         });
+    };
+}
+
+// Confirm Modal Functions
+function openConfirmModal(title, message, onConfirm) {
+    document.getElementById('confirmModalTitle').textContent = title;
+    document.getElementById('confirmModalMessage').textContent = message;
+    document.getElementById('confirmModal').classList.remove('hidden');
+    document.getElementById('confirmModal').dataset.callback = '';
+    if (onConfirm) {
+        document.getElementById('confirmModal').dataset.callback = onConfirm.toString();
     }
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.add('hidden');
+}
+
+function submitConfirmAction() {
+    const modal = document.getElementById('confirmModal');
+    const callbackName = modal.dataset.callback;
+    if (callbackName && callbackName !== '') {
+        const func = new Function('return ' + callbackName)();
+        if (typeof func === 'function') {
+            func();
+        }
+    }
+    closeConfirmModal();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) { lucide.createIcons(); }
 });
 </script>
+
+<!-- Confirm Modal -->
+<div id="confirmModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeConfirmModal()"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 m-4">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-amber-600"></i>
+                </div>
+                <div>
+                    <h3 id="confirmModalTitle" class="text-lg font-bold text-slate-800">Confirm Action</h3>
+                </div>
+            </div>
+            <p id="confirmModalMessage" class="text-slate-600 mb-6"></p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 py-3 rounded-xl font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+                <button onclick="submitConfirmAction()" class="flex-1 py-3 rounded-xl font-semibold text-white bg-amber-500 hover:bg-amber-600">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
