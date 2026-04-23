@@ -758,7 +758,7 @@ class RequestSummaryReportView(LoginRequiredMixin, UserPassesTestMixin, Template
             for log in logs[:10]:
                 timeline.append({
                     'action': f"{log.old_status} -> {log.new_status}",
-                    'timestamp': log.timestamp.isoformat() if log.timestamp else None,
+                    'timestamp': log.timestamp,
                     'by': log.action_by.get_full_name() if log.action_by else 'System',
                 })
 
@@ -772,7 +772,7 @@ class RequestSummaryReportView(LoginRequiredMixin, UserPassesTestMixin, Template
                 'status_display': r.get_status_display(),
                 'user': r.user.get_full_name() or r.user.username,
                 'department': r.user.department.name if r.user.department else '-',
-                'created_at': r.created_at.isoformat() if r.created_at else None,
+                'created_at': r.created_at,
                 'days_open': days_open,
                 'reason': r.reason[:100] if r.reason else '',
                 'timeline': timeline,
@@ -1015,8 +1015,8 @@ class RequestTurnaroundReportView(LoginRequiredMixin, UserPassesTestMixin, Templ
                 'status': r.status,
                 'status_display': r.get_status_display(),
                 'user': r.user.get_full_name() or r.user.username,
-                'created_at': r.created_at.isoformat() if r.created_at else None,
-                'completed_at': completed_log.timestamp.isoformat() if completed_log and completed_log.timestamp else None,
+                'created_at': r.created_at,
+                'completed_at': completed_log.timestamp if completed_log and completed_log.timestamp else None,
                 'total_days': total_days,
                 'manager_time': manager_approval_time,
                 'it_time': it_approval_time,

@@ -87,54 +87,24 @@
             <span class="sidebar-text whitespace-nowrap">Categories</span>
         </a>
 
-<a href="{% url 'equipment:comprehensive_report' %}"
-           class="flex items-center gap-3 p-3 rounded-lg transition group hover:bg-slate-800 text-slate-400 {% if request.resolver_match.url_name == 'comprehensive_report' %}bg-opacity-20 text-white{% endif %}"
-           style="{% if request.resolver_match.url_name == 'comprehensive_report' %}background-color: var(--primary-color); background-opacity: 0.2;{% endif %}">
-             <i data-lucide="file-text" class="w-5 h-5 shrink-0"></i>
-             <span class="sidebar-text whitespace-nowrap font-medium">Comprehensive Report</span>
-        </a>
-
-        <a href="{% url 'equipment:dashboard_report' %}"
-           class="flex items-center gap-3 p-3 rounded-lg transition group hover:bg-slate-800 text-slate-400 {% if request.resolver_match.url_name == 'dashboard_report' %}bg-opacity-20 text-white{% endif %}"
-           style="{% if request.resolver_match.url_name == 'dashboard_report' %}background-color: var(--primary-color); background-opacity: 0.2;{% endif %}">
-             <i data-lucide="bar-chart-2" class="w-5 h-5 shrink-0"></i>
-             <span class="sidebar-text whitespace-nowrap font-medium">Analytics Report</span>
-        </a>
-
-        <a href="{% url 'equipment:maintenance_report' %}"
-           class="flex items-center gap-3 p-3 rounded-lg transition group hover:bg-slate-800 text-slate-400 {% if request.resolver_match.url_name == 'maintenance_report' %}bg-opacity-20 text-white{% endif %}"
-           style="{% if request.resolver_match.url_name == 'maintenance_report' %}background-color: var(--primary-color); background-opacity: 0.2;{% endif %}">
-             <i data-lucide="wrench" class="w-5 h-5 shrink-0"></i>
-             <span class="sidebar-text whitespace-nowrap font-medium">Maintenance</span>
-        </a>
-
-        <a href="{% url 'equipment:request_summary_report' %}"
-           class="flex items-center gap-3 p-3 rounded-lg transition group hover:bg-slate-800 text-slate-400 {% if request.resolver_match.url_name == 'request_summary_report' %}bg-opacity-20 text-white{% endif %}"
-           style="{% if request.resolver_match.url_name == 'request_summary_report' %}background-color: var(--primary-color); background-opacity: 0.2;{% endif %}">
-             <i data-lucide="clipboard-list" class="w-5 h-5 shrink-0"></i>
-             <span class="sidebar-text whitespace-nowrap font-medium">Request Summary</span>
-        </a>
-
-        <a href="{% url 'equipment:turnaround_report' %}"
-           class="flex items-center gap-3 p-3 rounded-lg transition group hover:bg-slate-800 text-slate-400 {% if request.resolver_match.url_name == 'turnaround_report' %}bg-opacity-20 text-white{% endif %}"
-           style="{% if request.resolver_match.url_name == 'turnaround_report' %}background-color: var(--primary-color); background-opacity: 0.2;{% endif %}">
-             <i data-lucide="timer" class="w-5 h-5 shrink-0"></i>
-             <span class="sidebar-text whitespace-nowrap font-medium">Turnaround</span>
-        </a>
-
-        <a href="{% url 'equipment:vendor_performance_report' %}"
-           class="flex items-center gap-3 p-3 rounded-lg transition group hover:bg-slate-800 text-slate-400 {% if request.resolver_match.url_name == 'vendor_performance_report' %}bg-opacity-20 text-white{% endif %}"
-           style="{% if request.resolver_match.url_name == 'vendor_performance_report' %}background-color: var(--primary-color); background-opacity: 0.2;{% endif %}">
-             <i data-lucide="building-2" class="w-5 h-5 shrink-0"></i>
-             <span class="sidebar-text whitespace-nowrap font-medium">Vendor Performance</span>
-        </a>
-
-        <a href="{% url 'equipment:department_report' %}"
-           class="flex items-center gap-3 p-3 rounded-lg transition group hover:bg-slate-800 text-slate-400 {% if request.resolver_match.url_name == 'department_report' %}bg-opacity-20 text-white{% endif %}"
-           style="{% if request.resolver_match.url_name == 'department_report' %}background-color: var(--primary-color); background-opacity: 0.2;{% endif %}">
-             <i data-lucide="users" class="w-5 h-5 shrink-0"></i>
-             <span class="sidebar-text whitespace-nowrap font-medium">Department</span>
-        </a>
+        <div x-data="{ reportsOpen: false }" class="relative">
+            <button @click="reportsOpen = !reportsOpen" class="flex items-center justify-between w-full gap-3 p-3 rounded-lg transition group hover:bg-slate-800 text-slate-400">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="file-text" class="w-5 h-5 shrink-0"></i>
+                    <span class="sidebar-text whitespace-nowrap font-medium">Reports</span>
+                </div>
+                <i data-lucide="chevron-down" class="w-4 h-4 sidebar-text transition-transform" :class="{ 'rotate-180': reportsOpen }"></i>
+            </button>
+            <div x-show="reportsOpen" x-collapse class="ml-4 mt-1 space-y-1 border-l border-slate-700 pl-2">
+                <a href="{% url 'equipment:comprehensive_report' %}" class="flex items-center gap-3 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400">Comprehensive</a>
+                <a href="{% url 'equipment:dashboard_report' %}" class="flex items-center gap-3 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400">Analytics</a>
+                <a href="{% url 'equipment:maintenance_report' %}" class="flex items-center gap-3 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400">Maintenance</a>
+                <a href="{% url 'equipment:request_summary_report' %}" class="flex items-center gap-3 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400">Request Summary</a>
+                <a href="{% url 'equipment:turnaround_report' %}" class="flex items-center gap-3 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400">Turnaround</a>
+                <a href="{% url 'equipment:vendor_performance_report' %}" class="flex items-center gap-3 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400">Vendor Performance</a>
+                <a href="{% url 'equipment:department_report' %}" class="flex items-center gap-3 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400">Department</a>
+            </div>
+        </div>
 
         <div class="pt-4 border-t border-slate-800 mt-4 mb-2">
             <div class="sidebar-text text-[10px] text-slate-500 uppercase px-3 tracking-widest font-black">System</div>
