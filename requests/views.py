@@ -286,13 +286,25 @@ class ProcessMaintenanceView(LoginRequiredMixin, UserPassesTestMixin, View):
         try:
             vendor = get_object_or_404(Vendor, id=vendor_id)
 
-            MaintenanceRecord.objects.create(
-                request=request_obj,
-                equipment=request_obj.equipment,
-                vendor=vendor,
-                estimated_cost=est_cost,
-                expected_return_date=return_date if return_date else None,
-            )
+            # Check if maintenance record already exists
+            m_record = MaintenanceRecord.objects.filter(request=request_obj).first()
+            
+            if m_record:
+                # Update existing record
+                m_record.vendor = vendor
+                m_record.estimated_cost = est_cost
+                m_record.expected_return_date = return_date if return_date else None
+                m_record.status = 'IN_PROGRESS'
+                m_record.save()
+            else:
+                # Create new record
+                MaintenanceRecord.objects.create(
+                    request=request_obj,
+                    equipment=request_obj.equipment,
+                    vendor=vendor,
+                    estimated_cost=est_cost,
+                    expected_return_date=return_date if return_date else None,
+                )
 
             RequestService.update_request_status(
                 request_obj=request_obj,
