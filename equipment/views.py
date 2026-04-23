@@ -918,6 +918,9 @@ class DepartmentDistributionReportView(LoginRequiredMixin, UserPassesTestMixin, 
 
         dept_labels = [d['department'].name for d in dept_data]
         dept_values = [d['assigned_count'] for d in dept_data]
+        
+        dept_labels_json = json.dumps(dept_labels) if dept_labels else json.dumps([])
+        dept_values_json = json.dumps(dept_values) if dept_values else json.dumps([])
 
         context.update({
             'departments': dept_data,
@@ -925,9 +928,10 @@ class DepartmentDistributionReportView(LoginRequiredMixin, UserPassesTestMixin, 
             'total_value': total_value,
             'total_users': total_users,
             'total_departments': len(dept_data),
-            'dept_labels_json': json.dumps(dept_labels),
-            'dept_values_json': json.dumps(dept_values),
+            'dept_labels_json': dept_labels_json,
+            'dept_values_json': dept_values_json,
         })
+        return context
         return context
 
 
@@ -1016,9 +1020,15 @@ class RequestTurnaroundReportView(LoginRequiredMixin, UserPassesTestMixin, Templ
 
         turnaround_data.sort(key=lambda x: x['total_days'], reverse=True)
 
-        avg_turnaround = sum(r['total_days'] for r in turnaround_data) / len(turnaround_data) if turnaround_data else 0
-        avg_manager_time = sum(r['manager_time'] for r in turnaround_data if r['manager_time']) / len([r for r in turnaround_data if r['manager_time']]) if turnaround_data else 0
-        avg_it_time = sum(r['it_time'] for r in turnaround_data if r['it_time']) / len([r for r in turnaround_data if r['it_time']]) if turnaround_data else 0
+        if turnaround_data:
+            manager_items = [r for r in turnaround_data if r['manager_time']]
+            it_items = [r for r in turnaround_data if r['it_time']]
+            
+            avg_turnaround = sum(r['total_days'] for r in turnaround_data) / len(turnaround_data)
+            avg_manager_time = sum(r['manager_time'] for r in manager_items) / len(manager_items) if manager_items else 0
+            avg_it_time = sum(r['it_time'] for r in it_items) / len(it_items) if it_items else 0
+        else:
+            avg_turnaround = avg_manager_time = avg_it_time = 0
 
         context.update({
             'turnaround_data': turnaround_data,

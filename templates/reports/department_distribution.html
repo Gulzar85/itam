@@ -95,34 +95,35 @@
 
 {% block extra_js %}
 <script>
-function reportApp() {
-    init() {
-        initLucide();
-        this.$nextTick(() => {
-            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+document.addEventListener('DOMContentLoaded', function() {
+    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+    
+    try {
+        const labels = {{ dept_labels_json|safe }};
+        const values = {{ dept_values_json|safe }};
+
+        if (labels && labels.length > 0) {
+            initLucide && initLucide();
             
-            const labels = {{ dept_labels_json|safe }};
-            const values = {{ dept_values_json|safe }};
+            new ApexCharts(document.querySelector("#chart-dept"), {
+                chart: { type: 'bar', height: 300, toolbar: { show: false } },
+                colors: [primaryColor, '#10b981', '#f59e0b', '#ef4444'],
+                series: [{ name: 'Equipment', data: values }],
+                xaxis: { categories: labels },
+                plotOptions: { bar: { borderRadius: 8, horizontal: true } }
+            }).render();
 
-            if (labels.length > 0) {
-                new ApexCharts(document.querySelector("#chart-dept"), {
-                    chart: { type: 'bar', height: 300, toolbar: { show: false } },
-                    colors: [primaryColor, '#10b981', '#f59e0b', '#ef4444'],
-                    series: [{ name: 'Equipment', data: values }],
-                    xaxis: { categories: labels },
-                    plotOptions: { bar: { borderRadius: 8, horizontal: true } }
-                }).render();
-
-                new ApexCharts(document.querySelector("#chart-share"), {
-                    chart: { type: 'donut', height: 300, toolbar: { show: false } },
-                    colors: [primaryColor, '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
-                    series: values,
-                    labels: labels,
-                    plotOptions: { pie: { donut: { size: '75%' } } }
-                }).render();
-            }
-        });
+            new ApexCharts(document.querySelector("#chart-share"), {
+                chart: { type: 'donut', height: 300, toolbar: { show: false } },
+                colors: [primaryColor, '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
+                series: values,
+                labels: labels,
+                plotOptions: { pie: { donut: { size: '75%' } } }
+            }).render();
+        }
+    } catch(e) {
+        console.error('Chart error:', e);
     }
-}
+});
 </script>
 {% endblock %}
