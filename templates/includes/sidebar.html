@@ -87,18 +87,18 @@
             <span class="sidebar-text whitespace-nowrap">Categories</span>
         </a>
 
-<a href="{% url 'equipment:dashboard_report' %}"
-           class="flex items-center gap-3 p-3 rounded-lg transition group hover:bg-slate-800 text-slate-400 {% if request.resolver_match.url_name == 'dashboard_report' %}bg-opacity-20 text-white{% endif %}"
-           style="{% if request.resolver_match.url_name == 'dashboard_report' %}background-color: var(--primary-color); background-opacity: 0.2;{% endif %}">
-             <i data-lucide="bar-chart-2" class="w-5 h-5 shrink-0"></i>
-             <span class="sidebar-text whitespace-nowrap font-medium">Analytics Report</span>
-        </a>
-
-        <a href="{% url 'equipment:comprehensive_report' %}"
+<a href="{% url 'equipment:comprehensive_report' %}"
            class="flex items-center gap-3 p-3 rounded-lg transition group hover:bg-slate-800 text-slate-400 {% if request.resolver_match.url_name == 'comprehensive_report' %}bg-opacity-20 text-white{% endif %}"
            style="{% if request.resolver_match.url_name == 'comprehensive_report' %}background-color: var(--primary-color); background-opacity: 0.2;{% endif %}">
              <i data-lucide="file-text" class="w-5 h-5 shrink-0"></i>
              <span class="sidebar-text whitespace-nowrap font-medium">Comprehensive Report</span>
+        </a>
+
+        <a href="{% url 'equipment:dashboard_report' %}"
+           class="flex items-center gap-3 p-3 rounded-lg transition group hover:bg-slate-800 text-slate-400 {% if request.resolver_match.url_name == 'dashboard_report' %}bg-opacity-20 text-white{% endif %}"
+           style="{% if request.resolver_match.url_name == 'dashboard_report' %}background-color: var(--primary-color); background-opacity: 0.2;{% endif %}">
+             <i data-lucide="bar-chart-2" class="w-5 h-5 shrink-0"></i>
+             <span class="sidebar-text whitespace-nowrap font-medium">Analytics Report</span>
         </a>
 
         <div class="pt-4 border-t border-slate-800 mt-4 mb-2">
