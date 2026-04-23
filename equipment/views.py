@@ -608,7 +608,6 @@ class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
             'filter_brand': brand or '',
             'filter_status': status or '',
             'filtered_equipment': enriched_equipment,
-            'filtered_equipment_json': json.dumps(enriched_equipment),
         })
         return context
 
@@ -692,7 +691,6 @@ class MaintenanceHistoryReportView(LoginRequiredMixin, UserPassesTestMixin, Temp
 
         context.update({
             'records': records,
-            'records_json': json.dumps(records),
             'vendors': Vendor.objects.all(),
             'total_records': total_records,
             'completed_records': completed_records,
@@ -780,7 +778,6 @@ class RequestSummaryReportView(LoginRequiredMixin, UserPassesTestMixin, Template
 
         context.update({
             'requests': requests_data,
-            'requests_json': json.dumps(requests_data),
             'total_requests': req_query.count(),
             'pending_requests': req_query.filter(status='PENDING').count(),
             'approved_requests': req_query.filter(status__in=['MANAGER_APPROVED', 'IT_APPROVED']).count(),
@@ -1037,7 +1034,6 @@ class RequestTurnaroundReportView(LoginRequiredMixin, UserPassesTestMixin, Templ
 
         context.update({
             'turnaround_data': turnaround_data,
-            'turnaround_data_json': json.dumps(turnaround_data),
             'total_requests': req_query.count(),
             'completed_requests': req_query.filter(status='COMPLETED').count(),
             'avg_turnaround': round(avg_turnaround, 1),

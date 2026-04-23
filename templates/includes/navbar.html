@@ -33,7 +33,7 @@
 
         <!-- User Menu Dropdown -->
         <div class="relative" x-data="{ open: false }">
-            <button @click="open = !open"
+            <button @click="open = !open" @click.outside="open = false"
                     class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
                 <!-- User Avatar -->
                 <div class="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm"

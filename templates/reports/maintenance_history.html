@@ -147,7 +147,6 @@
 function reportApp() {
     return {
         dt: null,
-        records: {{ records_json|safe }},
         init() {
             initLucide();
             this.$nextTick(() => {

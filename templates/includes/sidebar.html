@@ -88,7 +88,7 @@
         </a>
 
         <div x-data="{ reportsOpen: false }" class="relative">
-            <button @click="reportsOpen = !reportsOpen" class="flex items-center justify-between w-full gap-3 p-3 rounded-lg transition group hover:bg-slate-800 text-slate-400">
+            <button @click="reportsOpen = !reportsOpen" @click.outside="reportsOpen = false" class="flex items-center justify-between w-full gap-3 p-3 rounded-lg transition group hover:bg-slate-800 text-slate-400">
                 <div class="flex items-center gap-3">
                     <i data-lucide="file-text" class="w-5 h-5 shrink-0"></i>
                     <span class="sidebar-text whitespace-nowrap font-medium">Reports</span>
@@ -96,13 +96,13 @@
                 <i data-lucide="chevron-down" class="w-4 h-4 sidebar-text transition-transform" :class="{ 'rotate-180': reportsOpen }"></i>
             </button>
             <div x-show="reportsOpen" x-collapse class="ml-4 mt-1 space-y-1 border-l border-slate-700 pl-2">
-                <a href="{% url 'equipment:comprehensive_report' %}" class="flex items-center gap-3 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400">Comprehensive</a>
-                <a href="{% url 'equipment:dashboard_report' %}" class="flex items-center gap-3 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400">Analytics</a>
-                <a href="{% url 'equipment:maintenance_report' %}" class="flex items-center gap-3 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400">Maintenance</a>
-                <a href="{% url 'equipment:request_summary_report' %}" class="flex items-center gap-3 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400">Request Summary</a>
-                <a href="{% url 'equipment:turnaround_report' %}" class="flex items-center gap-3 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400">Turnaround</a>
-                <a href="{% url 'equipment:vendor_performance_report' %}" class="flex items-center gap-3 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400">Vendor Performance</a>
-                <a href="{% url 'equipment:department_report' %}" class="flex items-center gap-3 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400">Department</a>
+                <a href="{% url 'equipment:comprehensive_report' %}" class="flex items-center gap-2 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400"><i data-lucide="file-text" class="w-4 h-4"></i>Comprehensive</a>
+                <a href="{% url 'equipment:dashboard_report' %}" class="flex items-center gap-2 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400"><i data-lucide="bar-chart-2" class="w-4 h-4"></i>Analytics</a>
+                <a href="{% url 'equipment:maintenance_report' %}" class="flex items-center gap-2 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400"><i data-lucide="wrench" class="w-4 h-4"></i>Maintenance</a>
+                <a href="{% url 'equipment:request_summary_report' %}" class="flex items-center gap-2 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400"><i data-lucide="clipboard-list" class="w-4 h-4"></i>Request Summary</a>
+                <a href="{% url 'equipment:turnaround_report' %}" class="flex items-center gap-2 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400"><i data-lucide="timer" class="w-4 h-4"></i>Turnaround</a>
+                <a href="{% url 'equipment:vendor_performance_report' %}" class="flex items-center gap-2 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400"><i data-lucide="building-2" class="w-4 h-4"></i>Vendor Performance</a>
+                <a href="{% url 'equipment:department_report' %}" class="flex items-center gap-2 p-2 rounded-lg text-sm hover:bg-slate-800 text-slate-400"><i data-lucide="users" class="w-4 h-4"></i>Department</a>
             </div>
         </div>
 
