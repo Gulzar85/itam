@@ -76,8 +76,11 @@
     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-6">
         <form method="get" class="flex flex-wrap gap-4">
             <div class="flex-1 min-w-64">
-                <input type="text" name="search" value="{{ request.GET.search }}" placeholder="Search by serial, model, brand..." class="w-full p-3 rounded-xl border border-slate-200 outline-none bg-slate-50 input-focus transition-all">
+                <input type="text" name="search" value="{{ request.GET.search }}" placeholder="Search by serial, tracking ID, model, brand..." class="w-full p-3 rounded-xl border border-slate-200 outline-none bg-slate-50 input-focus transition-all">
             </div>
+            <button type="button" onclick="startQRScan()" class="px-4 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors flex items-center font-bold text-slate-600" title="Scan QR Code">
+                <i data-lucide="qr-code" class="w-4 h-4"></i>
+            </button>
             <div class="min-w-48">
                 <select name="status" class="w-full p-3 rounded-xl border border-slate-200 outline-none bg-slate-50 font-medium text-slate-600 input-focus transition-all">
                     <option value="">All Status</option>
@@ -215,5 +218,22 @@ document.addEventListener('DOMContentLoaded', function() {
         lucide.createIcons();
     }
 });
+
+function startQRScan() {
+    const searchInput = document.querySelector('input[name="search"]');
+    const hasCamera = navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
+    
+    if (!hasCamera) {
+        alert('Camera not available. Please use a device with a camera.');
+        return;
+    }
+    
+    const scanCode = prompt('Enter QR code value manually or use camera:\n\nFor manual entry, type the serial/tracking ID and press OK:');
+    
+    if (scanCode) {
+        searchInput.value = scanCode.trim();
+        searchInput.closest('form').submit();
+    }
+}
 </script>
 {% endblock %}

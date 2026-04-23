@@ -59,6 +59,7 @@ class EquipmentListView(LoginRequiredMixin, ListView):
         if search:
             queryset = queryset.filter(
                 Q(serial_number__icontains=search) |
+                Q(tracking_id__icontains=search) |
                 Q(model_number__icontains=search) |
                 Q(brand__name__icontains=search) |
                 Q(category__name__icontains=search)
