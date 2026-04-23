@@ -17,11 +17,11 @@
             </h1>
             <p class="text-gray-500 mt-2 ml-14 font-medium">Track all maintenance and repair records</p>
         </div>
-        <div class="flex gap-2">
-            <button @click="exportCSV()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
-                <i data-lucide="download" class="w-4 h-4 text-custom-primary"></i> Export
+<div class="flex gap-2">
+            <button @click="exportCSV()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm print-btn">
+                <i data-lucide="download" class="w-4 h-4 text-custom-primary"></i> Export CSV
             </button>
-            <button onclick="window.print()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
+            <button onclick="window.print()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm print-btn">
                 <i data-lucide="printer" class="w-4 h-4 text-custom-primary"></i> Print
             </button>
         </div>
@@ -149,12 +149,21 @@
 </div>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+@media print {
+    .sidebar, .print-btn, .no-print { display: none !important; }
+    .glass-card { box-shadow: none !important; border: 1px solid #ddd !important; }
+    body { background: white !important; }
+}
+</style>
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/datatables@1.13.8/dist/js/dataTables.min.js"></script>
 <script>
 function reportApp() {
     return {
         dt: null,
+        records: {{ records_json|safe }},
         init() {
             initLucide();
             this.$nextTick(() => {
@@ -165,10 +174,18 @@ function reportApp() {
             });
         },
         exportCSV() {
-            if (!this.dt) return;
-            let csv = [['Equipment', 'Vendor', 'Issue', 'Sent Date', 'Return Date', 'Duration', 'Est Cost', 'Actual Cost', 'Status']];
-            this.dt.rows().data().each(row => csv.push(row.map(c => '"' + String(c).replace(/"/g, '""') + '"')));
-            const blob = new Blob([csv.map(r => r.join(',')).join('\n')], { type: 'text/csv' });
+            const headers = ['Equipment', 'Vendor', 'Issue', 'Sent Date', 'Return Date', 'Duration', 'Est Cost', 'Actual Cost', 'Status'];
+            const rows = [headers];
+            
+            this.records.forEach(r => {
+                rows.push([
+                    r.equipment, r.vendor, r.issue, r.sent_date || '', r.return_date || '',
+                    r.repair_duration || '', r.estimated_cost || '', r.actual_cost || '', r.status
+                ].map(c => '"' + String(c).replace(/"/g, '""') + '"'));
+            });
+            
+            const csv = rows.map(r => r.join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = 'maintenance_report_' + new Date().toISOString().split('T')[0] + '.csv';

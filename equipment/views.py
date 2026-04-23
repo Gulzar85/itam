@@ -608,6 +608,7 @@ class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
             'filter_brand': brand or '',
             'filter_status': status or '',
             'filtered_equipment': enriched_equipment,
+            'filtered_equipment_json': json.dumps(enriched_equipment),
         })
         return context
 
@@ -685,10 +686,13 @@ class MaintenanceHistoryReportView(LoginRequiredMixin, UserPassesTestMixin, Temp
         total_actual = sum(r['actual_cost'] for r in records if r['actual_cost'])
         total_records = maint_query.count()
         completed_records = maint_query.filter(status='COMPLETED').count()
-        avg_duration = sum(r['repair_duration'] for r in records if r['repair_duration']) / len([r for r in records if r['repair_duration']]) if records else 0
+        
+        duration_items = [r for r in records if r['repair_duration']]
+        avg_duration = sum(r['repair_duration'] for r in duration_items) / len(duration_items) if duration_items else 0
 
         context.update({
             'records': records,
+            'records_json': json.dumps(records),
             'vendors': Vendor.objects.all(),
             'total_records': total_records,
             'completed_records': completed_records,

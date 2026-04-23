@@ -18,10 +18,10 @@
             <p class="text-gray-500 mt-2 ml-14 font-medium">Detailed data export with calculations</p>
         </div>
         <div class="flex gap-2">
-            <button @click="exportCSV()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
+            <button @click="exportCSV()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm print-btn">
                 <i data-lucide="download" class="w-4 h-4 text-custom-primary"></i> Export CSV
             </button>
-            <button onclick="window.print()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
+            <button onclick="window.print()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm print-btn">
                 <i data-lucide="printer" class="w-4 h-4 text-custom-primary"></i> Print
             </button>
         </div>
@@ -180,12 +180,24 @@
 </div>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+@media print {
+    .sidebar, .print-btn, .no-print { display: none !important; }
+    .glass-card { box-shadow: none !important; border: 1px solid #ddd !important; }
+    body { background: white !important; }
+    .container { max-width: 100% !important; padding: 0 !important; }
+}
+</style>
+{% endblock %}
+
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/datatables@1.13.8/dist/js/dataTables.min.js"></script>
 <script>
 function tableReport() {
     return {
         dt: null,
+        equipment: {{ filtered_equipment_json|safe }},
         
         init() {
             initLucide();
@@ -210,15 +222,19 @@ function tableReport() {
         },
 
         exportCSV() {
-            if (!this.dt) return;
             const headers = [
                 'Tracking ID', 'Brand', 'Model', 'Category', 'Status', 
                 'Assigned To', 'Department', 'Assign Age', 'Equipment Age', 'Warranty Status', 'Cost', 'Vendor', 'Purchase Date'
             ];
             const rows = [headers];
             
-            this.dt.rows().data().each((row) => {
-                rows.push(row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"'));
+            this.equipment.forEach(eq => {
+                rows.push([
+                    eq.tracking_id, eq.brand, eq.model_number, eq.category, eq.status_display,
+                    eq.assigned_to || '-', eq.department || '-', 
+                    eq.assign_age || '-', eq.equip_age || '-', 
+                    eq.warranty_status || '-', eq.purchase_cost, eq.vendor || '-', eq.purchase_date || '-'
+                ].map(c => '"' + String(c).replace(/"/g, '""') + '"'));
             });
 
             const csv = rows.map(r => r.join(',')).join('\n');
