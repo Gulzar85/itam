@@ -540,7 +540,7 @@ class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
             eq_with_assignment[str(a.equipment_id)] = {
                 'assigned_to': a.user.get_full_name() or a.user.username,
                 'department': a.user.department.name if a.user.department else '',
-                'assign_date': a.assign_date,
+                'assign_date': a.assigned_date,
             }
 
         equipment_list = eq_query.select_related('brand', 'category', 'original_vendor', 'current_repair_vendor')
