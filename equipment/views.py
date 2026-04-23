@@ -753,9 +753,9 @@ class RequestSummaryReportView(LoginRequiredMixin, UserPassesTestMixin, Template
             timeline = []
             for log in logs[:10]:
                 timeline.append({
-                    'action': log.action,
+                    'action': f"{log.old_status} -> {log.new_status}",
                     'timestamp': log.timestamp,
-                    'by': log.done_by.get_full_name() if log.done_by else 'System',
+                    'by': log.action_by.get_full_name() if log.action_by else 'System',
                 })
 
             requests_data.append({
@@ -985,10 +985,10 @@ class RequestTurnaroundReportView(LoginRequiredMixin, UserPassesTestMixin, Templ
                 for log in logs:
                     if prev_log:
                         hours = (log.timestamp - prev_log.timestamp).total_seconds() / 3600
-                        if 'MANAGER_APPROVED' in log.action and 'MANAGER' not in str(prev_log.action):
+                        if 'MANAGER_APPROVED' in log.new_status and 'MANAGER' not in str(prev_log.new_status):
                             manager_approval_time = round(hours, 1)
-                        elif 'IT_RECEIVED' in log.action or 'COMPLETED' in log.action:
-                            if 'MANAGER' in str(prev_log.action):
+                        elif 'IT_RECEIVED' in log.new_status or 'COMPLETED' in log.new_status:
+                            if 'MANAGER' in str(prev_log.new_status):
                                 it_approval_time = round(hours, 1)
                                 delivery_time = round((log.timestamp - prev_log.timestamp).total_seconds() / 3600, 1)
                     prev_log = log
