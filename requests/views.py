@@ -126,7 +126,23 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
         req_obj = self.get_object()
         user = cast(User, self.request.user)
 
-        context['logs'] = req_obj.logs.all().order_by('-timestamp')
+        # Get logs and add created event at the beginning
+        logs = list(req_obj.logs.all().order_by('-timestamp'))
+        
+        # Create virtual "created" log entry
+        created_log = type('obj', (object,), {
+            'timestamp': req_obj.created_at,
+            'action_by': req_obj.user,
+            'status': 'CREATED',
+            'new_status': 'PENDING',
+            'remarks': f'Request created by {req_obj.user.get_full_name() or req_obj.user.username}'
+        })()
+        
+        # Add created event at the start
+        from itertools import chain
+        logs = list(chain([created_log], logs))
+        
+        context['logs'] = logs
         context['available_assets'] = Equipment.objects.filter(
             status='AVAILABLE').select_related('brand', 'category')
         context['vendors'] = Vendor.objects.all().order_by('name')
