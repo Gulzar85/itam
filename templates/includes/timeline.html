@@ -56,7 +56,7 @@
                  x-transition:enter-end="opacity-100 scale-100">
                 <div class="flex justify-between items-start gap-2">
                     <div class="min-w-0 flex-1">
-                        <p class="text-xs text-slate-400 mb-1">{{ item.timestamp|date:"d M Y, H:i" }}</p>
+                        <p class="text-xs text-slate-400 mb-1">{{ item.timestamp|date:"d M Y" }}</p>
                         <p class="text-sm font-bold text-slate-800 truncate">{{ item.action_by.username }}</p>
                     </div>
                     <span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-lg
