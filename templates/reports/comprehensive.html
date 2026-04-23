@@ -112,40 +112,50 @@
             <span class="text-sm text-gray-500">{{ filtered_equipment|length }} records found</span>
         </div>
         <div class="overflow-x-auto">
-            <table id="dataTable" class="display w-full text-sm">
+            <table id="dataTable" class="display w-full text-sm cell-border" style="width:100%">
                 <thead>
                     <tr class="border-b-2 border-gray-300 bg-gray-50">
-                        <th class="text-left py-3 px-4 font-black text-gray-700 uppercase text-xs tracking-wider">Tracking ID</th>
-                        <th class="text-left py-3 px-4 font-black text-gray-700 uppercase text-xs tracking-wider">Brand</th>
-                        <th class="text-left py-3 px-4 font-black text-gray-700 uppercase text-xs tracking-wider">Model</th>
-                        <th class="text-left py-3 px-4 font-black text-gray-700 uppercase text-xs tracking-wider">Serial Number</th>
-                        <th class="text-left py-3 px-4 font-black text-gray-700 uppercase text-xs tracking-wider">Category</th>
-                        <th class="text-left py-3 px-4 font-black text-gray-700 uppercase text-xs tracking-wider">Status</th>
-                        <th class="text-left py-3 px-4 font-black text-gray-700 uppercase text-xs tracking-wider">Purchase Date</th>
-                        <th class="text-right py-3 px-4 font-black text-gray-700 uppercase text-xs tracking-wider">Cost (PKR)</th>
-                        <th class="text-left py-3 px-4 font-black text-gray-700 uppercase text-xs tracking-wider">Location</th>
+                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Tracking ID</th>
+                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Brand</th>
+                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Model</th>
+                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Serial Number</th>
+                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Category</th>
+                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Status</th>
+                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Assigned To</th>
+                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Department</th>
+                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Assign Date</th>
+                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Purchase Date</th>
+                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Warranty Expiry</th>
+                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Vendor</th>
+                        <th class="text-right py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Cost (PKR)</th>
+                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Location</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for eq in filtered_equipment %}
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
-                        <td class="py-3 px-4 font-semibold text-custom-primary">{{ eq.tracking_id }}</td>
-                        <td class="py-3 px-4 font-medium">{{ eq.brand.name }}</td>
-                        <td class="py-3 px-4">{{ eq.model_number }}</td>
-                        <td class="py-3 px-4 font-mono text-xs">{{ eq.serial_number }}</td>
-                        <td class="py-3 px-4">{{ eq.category.name }}</td>
-                        <td class="py-3 px-4">
+                        <td class="py-3 px-3 font-semibold text-custom-primary whitespace-nowrap">{{ eq.tracking_id }}</td>
+                        <td class="py-3 px-3 font-medium">{{ eq.brand }}</td>
+                        <td class="py-3 px-3">{{ eq.model_number }}</td>
+                        <td class="py-3 px-3 font-mono text-xs whitespace-nowrap">{{ eq.serial_number }}</td>
+                        <td class="py-3 px-3">{{ eq.category }}</td>
+                        <td class="py-3 px-3">
                             <span class="px-2 py-1 rounded-full text-xs font-bold {% if eq.status == 'AVAILABLE' %}bg-emerald-100 text-emerald-700{% elif eq.status == 'ASSIGNED' %}bg-blue-100 text-blue-700{% elif eq.status == 'REPAIRING' %}bg-amber-100 text-amber-700{% else %}bg-red-100 text-red-700{% endif %}">
-                                {{ eq.get_status_display }}
+                                {{ eq.status_display }}
                             </span>
                         </td>
-                        <td class="py-3 px-4">{{ eq.purchase_date|date:"d M Y"|default:"-" }}</td>
-                        <td class="py-3 px-4 text-right">{{ eq.purchase_cost|floatformat:0|default:"0" }}</td>
-                        <td class="py-3 px-4">{{ eq.location|default:"-" }}</td>
+                        <td class="py-3 px-3 {% if not eq.assigned_to %}text-gray-400{% endif %}">{{ eq.assigned_to|default:"-" }}</td>
+                        <td class="py-3 px-3">{{ eq.department|default:"-" }}</td>
+                        <td class="py-3 px-3 whitespace-nowrap">{{ eq.assign_date|date:"d M Y"|default:"-" }}</td>
+                        <td class="py-3 px-3 whitespace-nowrap">{{ eq.purchase_date|date:"d M Y"|default:"-" }}</td>
+                        <td class="py-3 px-3 whitespace-nowrap {% if eq.warranty_expiry and eq.warranty_expiry|slice:":4" < "2024" %}text-red-600{% endif %}">{{ eq.warranty_expiry|date:"d M Y"|default:"-" }}</td>
+                        <td class="py-3 px-3">{{ eq.original_vendor|default:"-" }}</td>
+                        <td class="py-3 px-3 text-right font-medium">{{ eq.purchase_cost|floatformat:0|default:"0" }}</td>
+                        <td class="py-3 px-3">{{ eq.location|default:"-" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="9" class="py-8 text-center text-gray-500">No equipment found</td>
+                        <td colspan="14" class="py-8 text-center text-gray-500">No equipment found</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -173,6 +183,7 @@ function tableReport() {
                 this.dt = $(table).DataTable({
                     pageLength: 25,
                     order: [[0, 'desc']],
+                    scrollX: true,
                     dom: '<"flex justify-between items-center gap-4 mb-4"<"flex gap-2"l><"flex gap-2"f>>t<"flex justify-between items-center mt-4"ip>',
                     language: {
                         search: "Search:",
@@ -185,16 +196,18 @@ function tableReport() {
 
         exportCSV() {
             if (!this.dt) return;
-            const rows = [[
-                'Tracking ID', 'Brand', 'Model', 'Serial Number', 'Category', 'Status', 'Purchase Date', 'Cost', 'Location'
-            ]];
+            const headers = [
+                'Tracking ID', 'Brand', 'Model', 'Serial Number', 'Category', 'Status', 
+                'Assigned To', 'Department', 'Assign Date', 'Purchase Date', 'Warranty Expiry', 'Vendor', 'Cost', 'Location'
+            ];
+            const rows = [headers];
             
             this.dt.rows().data().each((row) => {
-                rows.push(row.map(cell => '"' + cell.replace(/"/g, '""') + '"'));
+                rows.push(row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"'));
             });
 
             const csv = rows.map(r => r.join(',')).join('\n');
-            const blob = new Blob([csv], { type: 'text/csv' });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = 'itam_report_' + new Date().toISOString().split('T')[0] + '.csv';

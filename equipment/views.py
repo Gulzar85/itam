@@ -507,12 +507,18 @@ class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
         eq_query = Equipment.objects.all()
 
         if start_date:
-            start = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
-            eq_query = eq_query.filter(purchase_date__gte=start)
+            try:
+                start = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
+                eq_query = eq_query.filter(purchase_date__gte=start)
+            except (ValueError, TypeError):
+                pass
 
         if end_date:
-            end = make_aware(datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
-            eq_query = eq_query.filter(purchase_date__lte=end)
+            try:
+                end = make_aware(datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+                eq_query = eq_query.filter(purchase_date__lte=end)
+            except (ValueError, TypeError):
+                pass
 
         if category:
             eq_query = eq_query.filter(category_id=category)
@@ -522,6 +528,45 @@ class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
 
         if status:
             eq_query = eq_query.filter(status=status)
+
+        from requests.models import Assignment
+        assignments = Assignment.objects.filter(
+            equipment__in=eq_query,
+            returned_date__isnull=True
+        ).select_related('equipment', 'equipment__brand', 'equipment__category', 'user', 'user__department')
+
+        eq_with_assignment = {}
+        for a in assignments:
+            eq_with_assignment[str(a.equipment_id)] = {
+                'assigned_to': a.user.get_full_name() or a.user.username,
+                'department': a.user.department.name if a.user.department else '',
+                'assign_date': a.assign_date,
+            }
+
+        equipment_list = eq_query.select_related('brand', 'category', 'original_vendor', 'current_repair_vendor')
+
+        enriched_equipment = []
+        for eq in equipment_list[:500]:
+            assignment_info = eq_with_assignment.get(str(eq.id), {})
+            enriched_equipment.append({
+                'id': eq.id,
+                'tracking_id': eq.tracking_id,
+                'brand': eq.brand.name if eq.brand else '',
+                'model_number': eq.model_number,
+                'serial_number': eq.serial_number,
+                'category': eq.category.name if eq.category else '',
+                'status': eq.status,
+                'status_display': eq.get_status_display,
+                'purchase_date': eq.purchase_date,
+                'purchase_cost': eq.purchase_cost,
+                'location': eq.location,
+                'warranty_expiry': eq.warranty_expiry,
+                'original_vendor': eq.original_vendor.name if eq.original_vendor else '',
+                'current_repair_vendor': eq.current_repair_vendor.name if eq.current_repair_vendor else '',
+                'assigned_to': assignment_info.get('assigned_to', ''),
+                'department': assignment_info.get('department', ''),
+                'assign_date': assignment_info.get('assign_date'),
+            })
 
         total_eq = eq_query.count()
         total_val = eq_query.aggregate(total=Sum('purchase_cost'))['total'] or 0
@@ -541,6 +586,6 @@ class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
             'filter_category': category or '',
             'filter_brand': brand or '',
             'filter_status': status or '',
-            'filtered_equipment': list(eq_query.select_related('brand', 'category')[:500]),
+            'filtered_equipment': enriched_equipment,
         })
         return context
