@@ -115,7 +115,7 @@
     </div>
 
     <div class="flex flex-wrap gap-2 p-1.5 bg-gray-200/50 rounded-3xl w-fit mb-10 border border-gray-200">
-        <template x-for="t in ['fleet', 'procurement', 'requests']">
+        <template x-for="t in ['fleet', 'procurement', 'requests', 'operations']">
             <button @click="tab = t; $nextTick(() => renderCharts())" 
                     :class="tab === t ? 'bg-white text-custom-primary shadow-md' : 'text-gray-500 hover:text-gray-700'"
                     class="flex items-center gap-2 px-8 py-3 rounded-2xl text-sm font-black transition-all capitalize">
@@ -157,6 +157,25 @@
                 <div id="chart-priority"></div>
             </div>
         </div>
+
+        <div x-show="tab === 'operations'" x-transition class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="glass-card p-8 rounded-[2rem]">
+                <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="building" class="text-orange-500"></i> Vendor Workload</h3>
+                <div id="chart-vendor"></div>
+            </div>
+            <div class="glass-card p-8 rounded-[2rem]">
+                <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="users" class="text-violet-500"></i> Department Issuance</h3>
+                <div id="chart-department"></div>
+            </div>
+            <div class="glass-card p-8 rounded-[2rem]">
+                <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="wrench" class="text-amber-600"></i> Maintenance Cost</h3>
+                <div id="chart-maintenance"></div>
+            </div>
+            <div class="glass-card p-8 rounded-[2rem]">
+                <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="circleDollar" class="text-green-500"></i> Cost by Category</h3>
+                <div id="chart-cost-category"></div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -168,7 +187,7 @@ function biDashboard() {
         tab: 'fleet',
         primaryColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
         ds: JSON.parse('{{ analytics_json|escapejs }}'),
-        rendered: { fleet: false, procurement: false, requests: false },
+        rendered: { fleet: false, procurement: false, requests: false, operations: false },
 
         init() {
             initLucide();
@@ -183,7 +202,7 @@ function biDashboard() {
 
             const base = {
                 chart: { height: 350, toolbar: { show: false }, fontFamily: 'Inter, sans-serif', background: 'transparent' },
-                colors: [this.primaryColor, '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
+                colors: [this.primaryColor, '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316'],
                 grid: { borderColor: '#f1f5f9' },
                 theme: { mode: 'light' }
             };
@@ -232,6 +251,34 @@ function biDashboard() {
                     ...base, chart: { ...base.chart, type: 'pie' },
                     series: this.ds.priority.series, labels: this.ds.priority.labels,
                     colors: ['#ef4444', '#f59e0b', '#3b82f6']
+                }).render();
+            }
+
+            if (this.tab === 'operations') {
+                new ApexCharts(document.querySelector("#chart-vendor"), {
+                    ...base, chart: { ...base.chart, type: 'polarArea' },
+                    series: this.ds.vendors.series, labels: this.ds.vendors.labels,
+                    fill: { opacity: 0.8 }
+                }).render();
+
+                new ApexCharts(document.querySelector("#chart-department"), {
+                    ...base, chart: { ...base.chart, type: 'bar' },
+                    series: [{ name: 'Assigned', data: this.ds.departments.series }],
+                    xaxis: { categories: this.ds.departments.labels },
+                    plotOptions: { bar: { borderRadius: 8, horizontal: false } }
+                }).render();
+
+                new ApexCharts(document.querySelector("#chart-maintenance"), {
+                    ...base, chart: { ...base.chart, type: 'bar' },
+                    series: [{ name: 'Cost', data: this.ds.maintenance.series }],
+                    xaxis: { categories: this.ds.maintenance.labels },
+                    plotOptions: { bar: { borderRadius: 8 } }
+                }).render();
+
+                new ApexCharts(document.querySelector("#chart-cost-category"), {
+                    ...base, chart: { ...base.chart, type: 'donut' },
+                    series: this.ds.categories.series, labels: this.ds.categories.labels,
+                    plotOptions: { pie: { donut: { size: '75%' } } }
                 }).render();
             }
 
