@@ -496,20 +496,14 @@ class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
         status = request.GET.get('status')
 
         eq_query = Equipment.objects.all()
-        req_query = Request.objects.all()
-        maint_query = MaintenanceRecord.objects.all()
 
         if start_date:
             start = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
             eq_query = eq_query.filter(purchase_date__gte=start)
-            req_query = req_query.filter(created_at__gte=start)
-            maint_query = maint_query.filter(sent_date__gte=start)
 
         if end_date:
             end = make_aware(datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
             eq_query = eq_query.filter(purchase_date__lte=end)
-            req_query = req_query.filter(created_at__lte=end)
-            maint_query = maint_query.filter(sent_date__lte=end)
 
         if category:
             eq_query = eq_query.filter(category_id=category)
@@ -522,45 +516,22 @@ class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
 
         total_eq = eq_query.count()
         total_val = eq_query.aggregate(total=Sum('purchase_cost'))['total'] or 0
-        available = eq_query.filter(status='AVAILABLE').count()
-        assigned = eq_query.filter(status='ASSIGNED').count()
-        repairing = eq_query.filter(status='REPAIRING').count()
-        damaged = eq_query.filter(status='DAMAGED').count()
-
-        cat_qs = Category.objects.annotate(count=Count('equipments')).order_by('-count')[:10]
-        brand_qs = Brand.objects.annotate(count=Count('equipments')).order_by('-count')[:10]
-
-        cost_qs = eq_query.exclude(purchase_date__isnull=True).annotate(
-            month=TruncMonth('purchase_date')).values('month').annotate(total=Sum('purchase_cost')).order_by('month')
-
-        trends_qs = req_query.annotate(month=TruncMonth('created_at')).values('month').annotate(count=Count('id')).order_by('month')
-
-        prio_data = req_query.values('priority').annotate(count=Count('id'))
-        vendor_qs = Vendor.objects.annotate(repair_count=Count('repairing_items')).order_by('-repair_count')[:10]
-
-        maint_qs = maint_query.exclude(sent_date__isnull=True).annotate(
-            month=TruncMonth('sent_date')
-        ).values('month').annotate(total_cost=Sum(Coalesce('actual_cost', 'estimated_cost'))).order_by('month')
-
-        analytics_data = {
-            'health': {'labels': ['Available', 'Assigned', 'Repairing', 'Damaged'], 'series': [available, assigned, repairing, damaged]},
-            'categories': {'labels': list(cat_qs.values_list('name', flat=True)), 'series': list(cat_qs.values_list('count', flat=True))},
-            'costs': {'labels': [m['month'].strftime('%b %Y') for m in cost_qs if m['month']], 'series': [float(m['total'] or 0) for m in cost_qs]},
-            'trends': {'labels': [m['month'].strftime('%b %Y') for m in trends_qs if m['month']], 'series': [m['count'] for m in trends_qs]},
-            'brands': {'labels': list(brand_qs.values_list('name', flat=True)), 'series': list(brand_qs.values_list('count', flat=True))},
-            'priority': {'labels': [p['priority'] for p in prio_data], 'series': [p['count'] for p in prio_data]},
-            'vendors': {'labels': list(vendor_qs.values_list('name', flat=True)), 'series': list(vendor_qs.values_list('repair_count', flat=True))},
-            'maintenance': {'labels': [m['month'].strftime('%b %Y') for m in maint_qs if m['month']], 'series': [float(m['total_cost'] or 0) for m in maint_qs]}
-        }
 
         context.update({
-            'total_equipment': total_eq, 'available_equipment': available, 'assigned_equipment': assigned,
-            'repairing_equipment': repairing, 'damaged_equipment': damaged, 'total_value': total_val,
-            'analytics_json': json.dumps(analytics_data),
-            'categories': Category.objects.all(), 'brands': Brand.objects.all(),
+            'total_equipment': total_eq,
+            'available_equipment': eq_query.filter(status='AVAILABLE').count(),
+            'assigned_equipment': eq_query.filter(status='ASSIGNED').count(),
+            'repairing_equipment': eq_query.filter(status='REPAIRING').count(),
+            'damaged_equipment': eq_query.filter(status='DAMAGED').count(),
+            'total_value': total_val,
+            'categories': Category.objects.all(),
+            'brands': Brand.objects.all(),
             'status_choices': Equipment.STATUS_CHOICES,
-            'filter_start_date': start_date or '', 'filter_end_date': end_date or '',
-            'filter_category': category or '', 'filter_brand': brand or '', 'filter_status': status or '',
-            'filtered_equipment': list(eq_query.select_related('brand', 'category')[:100]),
+            'filter_start_date': start_date or '',
+            'filter_end_date': end_date or '',
+            'filter_category': category or '',
+            'filter_brand': brand or '',
+            'filter_status': status or '',
+            'filtered_equipment': list(eq_query.select_related('brand', 'category')[:500]),
         })
         return context

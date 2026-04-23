@@ -1,14 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<style>
-    [x-cloak] { display: none !important; }
-    .dataTables_wrapper { position: relative; }
-    .dataTables_scroll { overflow-x: auto; }
-    select { appearance: none; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem; }
-    .DTFC_Cloner { background: white; }
-    td.dtfc-new-color, th.dtfc-new-color { background-color: white; }
-</style>
+<style>[x-cloak] { display: none !important; }</style>
 
 <div class="container mx-auto px-4 py-4" x-data="biDashboard()" x-init="init()" x-cloak>
     
@@ -18,14 +11,11 @@
                 <span class="p-2 bg-custom-primary rounded-2xl shadow-lg shadow-[var(--primary-color-alpha)]">
                     <i data-lucide="bar-chart-big" class="w-7 h-7 text-white"></i>
                 </span>
-                Comprehensive Reports
+                Analytics Report
             </h1>
-            <p class="text-gray-500 mt-2 ml-14 font-medium">Analytics & Insights - Filter data to generate custom reports</p>
+            <p class="text-gray-500 mt-2 ml-14 font-medium">Data-driven insights for asset management.</p>
         </div>
         <div class="flex gap-2">
-            <button onclick="exportTable()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
-                <i data-lucide="download" class="w-4 h-4 text-custom-primary"></i> Export
-            </button>
             <button onclick="window.print()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
                 <i data-lucide="printer" class="w-4 h-4 text-custom-primary"></i> Print
             </button>
@@ -34,42 +24,42 @@
 
     <form method="GET" class="glass-card rounded-3xl p-6 mb-8 border border-gray-200">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
-            <div class="lg:col-span-1">
+            <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Start Date</label>
                 <input type="date" name="start_date" value="{{ filter_start_date }}" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-custom-primary/20">
             </div>
-            <div class="lg:col-span-1">
+            <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">End Date</label>
                 <input type="date" name="end_date" value="{{ filter_end_date }}" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-custom-primary/20">
             </div>
-            <div class="lg:col-span-1">
+            <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Category</label>
                 <select name="category" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-custom-primary/20">
-                    <option value="">All Categories</option>
+                    <option value="">All</option>
                     {% for cat in categories %}
                     <option value="{{ cat.id }}" {% if filter_category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="lg:col-span-1">
+            <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Brand</label>
                 <select name="brand" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-custom-primary/20">
-                    <option value="">All Brands</option>
+                    <option value="">All</option>
                     {% for brand in brands %}
                     <option value="{{ brand.id }}" {% if filter_brand == brand.id|stringformat:"s" %}selected{% endif %}>{{ brand.name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="lg:col-span-1">
+            <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Status</label>
                 <select name="status" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-custom-primary/20">
-                    <option value="">All Status</option>
+                    <option value="">All</option>
                     {% for code, name in status_choices %}
                     <option value="{{ code }}" {% if filter_status == code %}selected{% endif %}>{{ name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="lg:col-span-1">
+            <div>
                 <div class="flex gap-2">
                     <button type="submit" class="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-custom-primary text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg shadow-custom-primary/30">
                         <i data-lucide="filter" class="w-4 h-4"></i> Apply
@@ -124,18 +114,8 @@
         </div>
     </div>
 
-    <div class="flex flex-wrap gap-2 p-1.5 bg-gray-200/50 rounded-3xl w-fit mb-10 border border-gray-200">
-        <template x-for="t in ['overview', 'financial', 'analytics', 'operations', 'table']">
-            <button @click="tab = t; $nextTick(() => { renderCharts(); initDataTable(); })" 
-                    :class="tab === t ? 'bg-white text-custom-primary shadow-md' : 'text-gray-500 hover:text-gray-700'"
-                    class="flex items-center gap-2 px-8 py-3 rounded-2xl text-sm font-black transition-all capitalize">
-                <span x-text="t === 'table' ? 'Data Table' : t"></span>
-            </button>
-        </template>
-    </div>
-
     <div class="min-h-[600px]">
-        <div x-show="tab === 'overview'" x-transition class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="glass-card p-8 rounded-[2rem]">
                 <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="heart" class="text-rose-500"></i> Fleet Health</h3>
                 <div id="chart-health"></div>
@@ -144,14 +124,10 @@
                 <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="tag" class="text-custom-primary"></i> Equipment Categories</h3>
                 <div id="chart-category"></div>
             </div>
-        </div>
-
-        <div x-show="tab === 'financial'" x-transition class="glass-card p-8 rounded-[2rem]">
-            <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="trending-up" class="text-emerald-500"></i> Procurement Over Time</h3>
-            <div id="chart-cost"></div>
-        </div>
-
-        <div x-show="tab === 'analytics'" x-transition class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="glass-card p-8 rounded-[2rem]">
+                <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="trending-up" class="text-emerald-500"></i> Procurement Over Time</h3>
+                <div id="chart-cost"></div>
+            </div>
             <div class="glass-card p-8 rounded-[2rem]">
                 <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="zap" class="text-yellow-500"></i> Request Volume</h3>
                 <div id="chart-trend"></div>
@@ -160,60 +136,17 @@
                 <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="award" class="text-blue-500"></i> Manufacturer Distribution</h3>
                 <div id="chart-brand"></div>
             </div>
-        </div>
-
-        <div x-show="tab === 'operations'" x-transition class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="glass-card p-8 rounded-[2rem]">
+                <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="alert-octagon" class="text-red-500"></i> Request Priority</h3>
+                <div id="chart-priority"></div>
+            </div>
             <div class="glass-card p-8 rounded-[2rem]">
                 <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="users" class="text-orange-500"></i> Vendor Workload</h3>
                 <div id="chart-vendor"></div>
             </div>
             <div class="glass-card p-8 rounded-[2rem]">
-                <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="alert-octagon" class="text-red-500"></i> Request Priority</h3>
-                <div id="chart-priority"></div>
-            </div>
-            <div class="glass-card p-8 rounded-[2rem] lg:col-span-2">
                 <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="wrench" class="text-gray-600"></i> Maintenance Spend Trend</h3>
                 <div id="chart-maintenance"></div>
-            </div>
-        </div>
-
-        <div x-show="tab === 'table'" x-transition class="glass-card p-8 rounded-[2rem]">
-            <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><i data-lucide="table-2" class="text-custom-primary"></i> Detailed Equipment Report</h3>
-            <div class="overflow-x-auto">
-                <table id="reportTable" class="display w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-gray-200">
-                            <th class="text-left py-3 px-4 font-black text-gray-600 uppercase text-xs tracking-wider">ID</th>
-                            <th class="text-left py-3 px-4 font-black text-gray-600 uppercase text-xs tracking-wider">Brand</th>
-                            <th class="text-left py-3 px-4 font-black text-gray-600 uppercase text-xs tracking-wider">Model</th>
-                            <th class="text-left py-3 px-4 font-black text-gray-600 uppercase text-xs tracking-wider">Serial Number</th>
-                            <th class="text-left py-3 px-4 font-black text-gray-600 uppercase text-xs tracking-wider">Category</th>
-                            <th class="text-left py-3 px-4 font-black text-gray-600 uppercase text-xs tracking-wider">Status</th>
-                            <th class="text-left py-3 px-4 font-black text-gray-600 uppercase text-xs tracking-wider">Purchase Date</th>
-                            <th class="text-right py-3 px-4 font-black text-gray-600 uppercase text-xs tracking-wider">Cost (PKR)</th>
-                            <th class="text-left py-3 px-4 font-black text-gray-600 uppercase text-xs tracking-wider">Location</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for eq in filtered_equipment %}
-                        <tr class="border-b border-gray-100 hover:bg-gray-50">
-                            <td class="py-3 px-4 font-medium">{{ eq.tracking_id }}</td>
-                            <td class="py-3 px-4">{{ eq.brand.name }}</td>
-                            <td class="py-3 px-4">{{ eq.model_number }}</td>
-                            <td class="py-3 px-4 font-mono text-xs">{{ eq.serial_number }}</td>
-                            <td class="py-3 px-4">{{ eq.category.name }}</td>
-                            <td class="py-3 px-4">
-                                <span class="px-2 py-1 rounded-full text-xs font-bold {% if eq.status == 'AVAILABLE' %}bg-emerald-100 text-emerald-700{% elif eq.status == 'ASSIGNED' %}bg-blue-100 text-blue-700{% elif eq.status == 'REPAIRING' %}bg-amber-100 text-amber-700{% else %}bg-red-100 text-red-700{% endif %}">
-                                    {{ eq.get_status_display }}
-                                </span>
-                            </td>
-                            <td class="py-3 px-4">{{ eq.purchase_date|date:"d M Y"|default:"-" }}</td>
-                            <td class="py-3 px-4 text-right font-medium">{{ eq.purchase_cost|floatformat:0|default:"0" }}</td>
-                            <td class="py-3 px-4">{{ eq.location|default:"-" }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
             </div>
         </div>
     </div>
@@ -221,35 +154,11 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/datatables@1.13.8/dist/js/dataTables.min.js"></script>
 <script>
-function exportTable() {
-    const table = document.querySelector('#reportTable');
-    if (!table) return alert('Please switch to Data Table tab first');
-    
-    let csv = [];
-    const rows = table.querySelectorAll('tr');
-    rows.forEach(row => {
-        const cols = row.querySelectorAll('td, th');
-        const rowData = [];
-        cols.forEach(col => rowData.push('"' + col.innerText.trim() + '"'));
-        csv.push(rowData.join(','));
-    });
-    
-    const csvFile = new Blob([csv.join('\n')], {type: "text/csv"});
-    const downloadLink = document.createElement("a");
-    downloadLink.download = "itam_report_" + new Date().toISOString().split('T')[0] + ".csv";
-    downloadLink.href = window.URL.createObjectURL(csvFile);
-    downloadLink.click();
-}
-
 function biDashboard() {
     return {
-        tab: 'overview',
-        dt: null,
         primaryColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
         ds: JSON.parse('{{ analytics_json|escapejs }}'),
-        rendered: { overview: false, financial: false, analytics: false, operations: false, table: false },
 
         init() {
             initLucide();
@@ -257,110 +166,68 @@ function biDashboard() {
         },
 
         renderCharts() {
-            if (this.rendered[this.tab]) {
-                initLucide();
-                return;
-            }
-
             const base = {
-                chart: { 
-                    height: 350, 
-                    toolbar: { show: false }, 
-                    fontFamily: 'Inter, sans-serif',
-                    background: 'transparent'
-                },
+                chart: { height: 350, toolbar: { show: false }, fontFamily: 'Inter, sans-serif', background: 'transparent' },
                 colors: [this.primaryColor, '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
                 grid: { borderColor: '#f1f5f9' },
                 theme: { mode: 'light' }
             };
 
-            if (this.tab === 'overview') {
-                new ApexCharts(document.querySelector("#chart-health"), {
-                    ...base, chart: { ...base.chart, type: 'donut' },
-                    series: this.ds.health.series, labels: this.ds.health.labels,
-                    plotOptions: { pie: { donut: { size: '80%' } } }
-                }).render();
+            new ApexCharts(document.querySelector("#chart-health"), {
+                ...base, chart: { ...base.chart, type: 'donut' },
+                series: this.ds.health.series, labels: this.ds.health.labels,
+                plotOptions: { pie: { donut: { size: '80%' } } }
+            }).render();
 
-                new ApexCharts(document.querySelector("#chart-category"), {
-                    ...base, chart: { ...base.chart, type: 'bar' },
-                    series: [{ name: 'Items', data: this.ds.categories.series }],
-                    xaxis: { categories: this.ds.categories.labels },
-                    plotOptions: { bar: { borderRadius: 12, columnWidth: '50%' } }
-                }).render();
-            }
+            new ApexCharts(document.querySelector("#chart-category"), {
+                ...base, chart: { ...base.chart, type: 'bar' },
+                series: [{ name: 'Items', data: this.ds.categories.series }],
+                xaxis: { categories: this.ds.categories.labels },
+                plotOptions: { bar: { borderRadius: 12, columnWidth: '50%' } }
+            }).render();
 
-            if (this.tab === 'financial') {
-                new ApexCharts(document.querySelector("#chart-cost"), {
-                    ...base, chart: { ...base.chart, type: 'area', height: 400 },
-                    stroke: { curve: 'smooth', width: 4, colors: [this.primaryColor] },
-                    series: [{ name: 'Investment', data: this.ds.costs.series }],
-                    xaxis: { categories: this.ds.costs.labels },
-                    fill: { 
-                        type: 'gradient', 
-                        gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0, colorStops: [
-                            { offset: 0, color: this.primaryColor, opacity: 0.4 },
-                            { offset: 100, color: this.primaryColor, opacity: 0 }
-                        ]} 
-                    }
-                }).render();
-            }
+            new ApexCharts(document.querySelector("#chart-cost"), {
+                ...base, chart: { ...base.chart, type: 'area', height: 400 },
+                stroke: { curve: 'smooth', width: 4, colors: [this.primaryColor] },
+                series: [{ name: 'Investment', data: this.ds.costs.series }],
+                xaxis: { categories: this.ds.costs.labels },
+                fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0, colorStops: [{ offset: 0, color: this.primaryColor, opacity: 0.4 }, { offset: 100, color: this.primaryColor, opacity: 0 }] } }
+            }).render();
 
-            if (this.tab === 'analytics') {
-                new ApexCharts(document.querySelector("#chart-trend"), {
-                    ...base, chart: { ...base.chart, type: 'line' },
-                    stroke: { width: 5, curve: 'smooth', colors: [this.primaryColor] },
-                    series: [{ name: 'Requests', data: this.ds.trends.series }],
-                    xaxis: { categories: this.ds.trends.labels }
-                }).render();
+            new ApexCharts(document.querySelector("#chart-trend"), {
+                ...base, chart: { ...base.chart, type: 'line' },
+                stroke: { width: 5, curve: 'smooth', colors: [this.primaryColor] },
+                series: [{ name: 'Requests', data: this.ds.trends.series }],
+                xaxis: { categories: this.ds.trends.labels }
+            }).render();
 
-                new ApexCharts(document.querySelector("#chart-brand"), {
-                    ...base, chart: { ...base.chart, type: 'bar', horizontal: true },
-                    series: [{ name: 'Count', data: this.ds.brands.series }],
-                    xaxis: { categories: this.ds.brands.labels },
-                    plotOptions: { bar: { borderRadius: 6, horizontal: true } }
-                }).render();
-            }
+            new ApexCharts(document.querySelector("#chart-brand"), {
+                ...base, chart: { ...base.chart, type: 'bar', horizontal: true },
+                series: [{ name: 'Count', data: this.ds.brands.series }],
+                xaxis: { categories: this.ds.brands.labels },
+                plotOptions: { bar: { borderRadius: 6, horizontal: true } }
+            }).render();
 
-            if (this.tab === 'operations') {
-                new ApexCharts(document.querySelector("#chart-vendor"), {
-                    ...base, chart: { ...base.chart, type: 'polarArea' },
-                    series: this.ds.vendors.series, labels: this.ds.vendors.labels,
-                    fill: { opacity: 0.8 }
-                }).render();
+            new ApexCharts(document.querySelector("#chart-priority"), {
+                ...base, chart: { ...base.chart, type: 'pie' },
+                series: this.ds.priority.series, labels: this.ds.priority.labels,
+                colors: ['#ef4444', '#f59e0b', '#3b82f6']
+            }).render();
 
-                new ApexCharts(document.querySelector("#chart-priority"), {
-                    ...base, chart: { ...base.chart, type: 'pie' },
-                    series: this.ds.priority.series, labels: this.ds.priority.labels,
-                    colors: ['#ef4444', '#f59e0b', '#3b82f6']
-                }).render();
+            new ApexCharts(document.querySelector("#chart-vendor"), {
+                ...base, chart: { ...base.chart, type: 'polarArea' },
+                series: this.ds.vendors.series, labels: this.ds.vendors.labels,
+                fill: { opacity: 0.8 }
+            }).render();
 
-                new ApexCharts(document.querySelector("#chart-maintenance"), {
-                    ...base, chart: { ...base.chart, type: 'bar' },
-                    series: [{ name: 'Cost', data: this.ds.maintenance.series }],
-                    xaxis: { categories: this.ds.maintenance.labels },
-                    plotOptions: { bar: { borderRadius: 8 } }
-                }).render();
-            }
+            new ApexCharts(document.querySelector("#chart-maintenance"), {
+                ...base, chart: { ...base.chart, type: 'bar' },
+                series: [{ name: 'Cost', data: this.ds.maintenance.series }],
+                xaxis: { categories: this.ds.maintenance.labels },
+                plotOptions: { bar: { borderRadius: 8 } }
+            }).render();
 
-            this.rendered[this.tab] = true;
             initLucide();
-        },
-
-        initDataTable() {
-            if (this.tab !== 'table' || this.dt) return;
-            
-            this.$nextTick(() => {
-                const table = document.querySelector('#reportTable');
-                if (table && !$.fn.DataTable.isDataTable(table)) {
-                    this.dt = $(table).DataTable({
-                        pageLength: 25,
-                        order: [[0, 'desc']],
-                        columnDefs: [{ targets: [6, 7], render: $.fn.dataTable.render.number(',', '.', 0) }],
-                        dom: '<"grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4"<"flex gap-2"l><"flex gap-2"f>>t<"flex justify-between items-center mt-4"ip>',
-                        language: { search: "Search:", lengthMenu: "Show _MENU_ entries" }
-                    });
-                }
-            });
         }
     }
 }
