@@ -916,12 +916,17 @@ class DepartmentDistributionReportView(LoginRequiredMixin, UserPassesTestMixin, 
         total_value = sum(d['total_value'] for d in dept_data)
         total_users = sum(d['total_users'] for d in dept_data)
 
+        dept_labels = [d['department'].name for d in dept_data]
+        dept_values = [d['assigned_count'] for d in dept_data]
+
         context.update({
             'departments': dept_data,
             'total_equipment': total_equipment,
             'total_value': total_value,
             'total_users': total_users,
             'total_departments': len(dept_data),
+            'dept_labels_json': json.dumps(dept_labels),
+            'dept_values_json': json.dumps(dept_values),
         })
         return context
 
@@ -966,14 +971,13 @@ class RequestTurnaroundReportView(LoginRequiredMixin, UserPassesTestMixin, Templ
 
         turnaround_data = []
         for r in req_query[:300]:
-            if r.status == 'COMPLETED' and r.completed_at:
-                total_hours = (r.completed_at - r.created_at).total_seconds() / 3600
-                total_days = round(total_hours / 24, 1)
-            elif r.status != 'COMPLETED':
-                total_hours = (today - r.created_at).total_seconds() / 3600
+            completed_log = r.logs.filter(new_status='COMPLETED').order_by('timestamp').first()
+            if completed_log:
+                total_hours = (completed_log.timestamp - r.created_at).total_seconds() / 3600
                 total_days = round(total_hours / 24, 1)
             else:
-                total_days = 0
+                total_hours = (today - r.created_at).total_seconds() / 3600
+                total_days = round(total_hours / 24, 1)
 
             manager_approval_time = None
             it_approval_time = None
@@ -1003,7 +1007,7 @@ class RequestTurnaroundReportView(LoginRequiredMixin, UserPassesTestMixin, Templ
                 'status_display': r.get_status_display(),
                 'user': r.user.get_full_name() or r.user.username,
                 'created_at': r.created_at,
-                'completed_at': r.completed_at,
+                'completed_at': completed_log.timestamp if completed_log else None,
                 'total_days': total_days,
                 'manager_time': manager_approval_time,
                 'it_time': it_approval_time,
