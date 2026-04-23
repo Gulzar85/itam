@@ -15,7 +15,7 @@
                 </span>
                 Comprehensive Report
             </h1>
-            <p class="text-gray-500 mt-2 ml-14 font-medium">Detailed data export with advanced filters</p>
+            <p class="text-gray-500 mt-2 ml-14 font-medium">Detailed data export with calculations</p>
         </div>
         <div class="flex gap-2">
             <button @click="exportCSV()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
@@ -99,15 +99,15 @@
             <p class="text-xs font-bold text-gray-400 uppercase">Damaged</p>
         </div>
         <div class="glass-card rounded-2xl p-4 text-center bg-custom-primary text-white">
-            <p class="text-xl font-black">{{ total_value|floatformat:0 }}</p>
-            <p class="text-xs font-bold opacity-80 uppercase">PKR Value</p>
+            <p class="text-xl font-black">PKR {{ total_value|floatformat:0 }}</p>
+            <p class="text-xs font-bold opacity-80 uppercase">Total Value</p>
         </div>
     </div>
 
     <div class="glass-card p-8 rounded-[2rem]">
         <div class="flex items-center justify-between mb-6">
             <h3 class="font-bold text-gray-800 flex items-center gap-2">
-                <i data-lucide="table-2" class="text-custom-primary"></i> Equipment Data
+                <i data-lucide="table-2" class="text-custom-primary"></i> Equipment Data with Calculations
             </h3>
             <span class="text-sm text-gray-500">{{ filtered_equipment|length }} records found</span>
         </div>
@@ -115,41 +115,58 @@
             <table id="dataTable" class="display w-full text-sm cell-border" style="width:100%">
                 <thead>
                     <tr class="border-b-2 border-gray-300 bg-gray-50">
-                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Tracking ID</th>
-                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Brand</th>
-                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Model</th>
-                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Serial Number</th>
-                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Category</th>
-                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Status</th>
-                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Assigned To</th>
-                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Department</th>
-                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Assign Date</th>
-                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Purchase Date</th>
-                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Warranty Expiry</th>
-                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Vendor</th>
-                        <th class="text-right py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Cost (PKR)</th>
+                        <th class="text-left py-3 px-2 font-black text-gray-700 uppercase text-xs tracking-wider">Tracking ID</th>
+                        <th class="text-left py-3 px-2 font-black text-gray-700 uppercase text-xs tracking-wider">Brand</th>
+                        <th class="text-left py-3 px-2 font-black text-gray-700 uppercase text-xs tracking-wider">Model</th>
+                        <th class="text-left py-3 px-2 font-black text-gray-700 uppercase text-xs tracking-wider">Category</th>
+                        <th class="text-left py-3 px-2 font-black text-gray-700 uppercase text-xs tracking-wider">Status</th>
+                        <th class="text-left py-3 px-2 font-black text-gray-700 uppercase text-xs tracking-wider">Assigned To</th>
+                        <th class="text-left py-3 px-2 font-black text-gray-700 uppercase text-xs tracking-wider">Department</th>
+                        <th class="text-center py-3 px-2 font-black text-gray-700 uppercase text-xs tracking-wider">Assign Age</th>
+                        <th class="text-center py-3 px-2 font-black text-gray-700 uppercase text-xs tracking-wider">Equipment Age</th>
+                        <th class="text-center py-3 px-2 font-black text-gray-700 uppercase text-xs tracking-wider">Warranty</th>
+                        <th class="text-right py-3 px-2 font-black text-gray-700 uppercase text-xs tracking-wider">Cost (PKR)</th>
+                        <th class="text-left py-3 px-2 font-black text-gray-700 uppercase text-xs tracking-wider">Vendor</th>
+                        <th class="text-left py-3 px-2 font-black text-gray-700 uppercase text-xs tracking-wider">Purchase Date</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for eq in filtered_equipment %}
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
-                        <td class="py-3 px-3 font-semibold text-custom-primary whitespace-nowrap">{{ eq.tracking_id }}</td>
-                        <td class="py-3 px-3 font-medium">{{ eq.brand }}</td>
-                        <td class="py-3 px-3">{{ eq.model_number }}</td>
-                        <td class="py-3 px-3 font-mono text-xs whitespace-nowrap">{{ eq.serial_number }}</td>
-                        <td class="py-3 px-3">{{ eq.category }}</td>
-                        <td class="py-3 px-3">
+                        <td class="py-3 px-2 font-semibold text-custom-primary whitespace-nowrap">{{ eq.tracking_id }}</td>
+                        <td class="py-3 px-2 font-medium">{{ eq.brand }}</td>
+                        <td class="py-3 px-2">{{ eq.model_number }}</td>
+                        <td class="py-3 px-2">{{ eq.category }}</td>
+                        <td class="py-3 px-2">
                             <span class="px-2 py-1 rounded-full text-xs font-bold {% if eq.status == 'AVAILABLE' %}bg-emerald-100 text-emerald-700{% elif eq.status == 'ASSIGNED' %}bg-blue-100 text-blue-700{% elif eq.status == 'REPAIRING' %}bg-amber-100 text-amber-700{% else %}bg-red-100 text-red-700{% endif %}">
                                 {{ eq.status_display }}
                             </span>
                         </td>
-                        <td class="py-3 px-3 {% if not eq.assigned_to %}text-gray-400{% endif %}">{{ eq.assigned_to|default:"-" }}</td>
-                        <td class="py-3 px-3">{{ eq.department|default:"-" }}</td>
-                        <td class="py-3 px-3 whitespace-nowrap">{{ eq.assign_date|date:"d M Y"|default:"-" }}</td>
-                        <td class="py-3 px-3 whitespace-nowrap">{{ eq.purchase_date|date:"d M Y"|default:"-" }}</td>
-                        <td class="py-3 px-3 whitespace-nowrap {% if eq.warranty_expiry and eq.warranty_expiry|slice:":4" < "2024" %}text-red-600{% endif %}">{{ eq.warranty_expiry|date:"d M Y"|default:"-" }}</td>
-                        <td class="py-3 px-3">{{ eq.original_vendor|default:"-" }}</td>
-                        <td class="py-3 px-3 text-right font-medium">{{ eq.purchase_cost|floatformat:0|default:"0" }}</td>
+                        <td class="py-3 px-2 {% if not eq.assigned_to %}text-gray-400{% endif %}">{{ eq.assigned_to|default:"-" }}</td>
+                        <td class="py-3 px-2">{{ eq.department|default:"-" }}</td>
+                        <td class="py-3 px-2 text-center">
+                            {% if eq.assign_age %}
+                                <span class="px-2 py-1 rounded-full text-xs font-medium {% if eq.days_assigned > 365 %}bg-red-100 text-red-700{% elif eq.days_assigned > 180 %}bg-amber-100 text-amber-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                                    {{ eq.assign_age }}
+                                </span>
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-2 text-center text-gray-600">{{ eq.age_display }}</td>
+                        <td class="py-3 px-2 text-center">
+                            {% if eq.warranty_expiry %}
+                                <span class="px-2 py-1 rounded-full text-xs font-bold {% if eq.warranty_status == 'EXPIRED' %}bg-red-100 text-red-700{% elif eq.warranty_status == 'EXPIRING SOON' %}bg-amber-100 text-amber-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
+                                    {{ eq.warranty_status }}
+                                </span>
+                                <div class="text-xs text-gray-500 mt-1">{{ eq.warranty_days_left }} days</div>
+                            {% else %}
+                                <span class="text-gray-400">No Warranty</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-2 text-right font-medium">{{ eq.purchase_cost|floatformat:0|default:"0" }}</td>
+                        <td class="py-3 px-2">{{ eq.original_vendor|default:"-" }}</td>
+                        <td class="py-3 px-2 whitespace-nowrap">{{ eq.purchase_date|date:"d M Y"|default:"-" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -195,8 +212,8 @@ function tableReport() {
         exportCSV() {
             if (!this.dt) return;
             const headers = [
-                'Tracking ID', 'Brand', 'Model', 'Serial Number', 'Category', 'Status', 
-                'Assigned To', 'Department', 'Assign Date', 'Purchase Date', 'Warranty Expiry', 'Vendor', 'Cost'
+                'Tracking ID', 'Brand', 'Model', 'Category', 'Status', 
+                'Assigned To', 'Department', 'Assign Age', 'Equipment Age', 'Warranty Status', 'Cost', 'Vendor', 'Purchase Date'
             ];
             const rows = [headers];
             
@@ -208,7 +225,7 @@ function tableReport() {
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = 'itam_report_' + new Date().toISOString().split('T')[0] + '.csv';
+            link.download = 'itam_comprehensive_report_' + new Date().toISOString().split('T')[0] + '.csv';
             link.click();
         }
     }

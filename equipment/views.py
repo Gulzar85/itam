@@ -488,6 +488,8 @@ class DashboardReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         return context
 
 
+from django.utils.timezone import now as utc_now
+
 class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'reports/comprehensive.html'
 
@@ -537,17 +539,29 @@ class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
 
         eq_with_assignment = {}
         for a in assignments:
+            days_assigned = (utc_now().date() - a.assigned_date).days if a.assigned_date else 0
             eq_with_assignment[str(a.equipment_id)] = {
                 'assigned_to': a.user.get_full_name() or a.user.username,
                 'department': a.user.department.name if a.user.department else '',
                 'assign_date': a.assigned_date,
+                'days_assigned': days_assigned,
+                'assign_age': f"{days_assigned} days" if days_assigned < 30 else f"{days_assigned // 30} months" if days_assigned < 365 else f"{days_assigned // 365} years",
             }
 
         equipment_list = eq_query.select_related('brand', 'category', 'original_vendor', 'current_repair_vendor')
 
+        today = utc_now().date()
         enriched_equipment = []
         for eq in equipment_list[:500]:
             assignment_info = eq_with_assignment.get(str(eq.id), {})
+            
+            days_owned = (today - eq.purchase_date).days if eq.purchase_date else 0
+            warranty_status = 'EXPIRED'
+            warranty_days_left = 0
+            if eq.warranty_expiry:
+                warranty_days_left = (eq.warranty_expiry - today).days
+                warranty_status = 'EXPIRED' if warranty_days_left < 0 else ('EXPIRING SOON' if warranty_days_left <= 30 else 'ACTIVE')
+
             enriched_equipment.append({
                 'id': eq.id,
                 'tracking_id': eq.tracking_id,
@@ -558,18 +572,24 @@ class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
                 'status': eq.status,
                 'status_display': eq.get_status_display,
                 'purchase_date': eq.purchase_date,
+                'days_owned': days_owned,
+                'age_display': f"{days_owned} days" if days_owned < 30 else f"{days_owned // 30} months" if days_owned < 365 else f"{days_owned // 365} years",
                 'purchase_cost': eq.purchase_cost,
-                'location': '',
                 'warranty_expiry': eq.warranty_expiry,
+                'warranty_status': warranty_status,
+                'warranty_days_left': warranty_days_left,
                 'original_vendor': eq.original_vendor.name if eq.original_vendor else '',
                 'current_repair_vendor': eq.current_repair_vendor.name if eq.current_repair_vendor else '',
                 'assigned_to': assignment_info.get('assigned_to', ''),
                 'department': assignment_info.get('department', ''),
                 'assign_date': assignment_info.get('assign_date'),
+                'days_assigned': assignment_info.get('days_assigned', 0),
+                'assign_age': assignment_info.get('assign_age', ''),
             })
 
         total_eq = eq_query.count()
         total_val = eq_query.aggregate(total=Sum('purchase_cost'))['total'] or 0
+        avg_cost = total_val / total_eq if total_eq > 0 else 0
 
         context.update({
             'total_equipment': total_eq,
@@ -578,6 +598,7 @@ class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
             'repairing_equipment': eq_query.filter(status='REPAIRING').count(),
             'damaged_equipment': eq_query.filter(status='DAMAGED').count(),
             'total_value': total_val,
+            'avg_cost': avg_cost,
             'categories': Category.objects.all(),
             'brands': Brand.objects.all(),
             'status_choices': Equipment.STATUS_CHOICES,
