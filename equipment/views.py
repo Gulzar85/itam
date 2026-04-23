@@ -102,12 +102,40 @@ class EquipmentDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['today'] = now().date()
-        context['logs'] = self.object.logs.all().order_by('-timestamp')
+        
+        # Get equipment logs chronologically
+        logs = list(self.object.logs.all().order_by('timestamp'))
+        
+        # Add virtual "registered" log at the beginning if not exists
+        if logs and logs[0].old_status != 'NEW':
+            registered_log = type('obj', (object,), {
+                'timestamp': self.object.purchase_date or self.object.created_at,
+                'action_by': None,
+                'status': 'NEW',
+                'new_status': 'AVAILABLE',
+                'remarks': f'Equipment registered in system'
+            })()
+            logs.insert(0, registered_log)
+        
+        context['logs'] = logs
+        
         from requests.models import Assignment
         context['current_assignment'] = Assignment.objects.filter(
             equipment=self.object,
             returned_date__isnull=True
         ).first()
+        
+        # Get maintenance history for this equipment
+        from equipment.models import MaintenanceRecord
+        context['maintenance_records'] = MaintenanceRecord.objects.filter(
+            equipment=self.object
+        ).select_related('vendor', 'request', 'request__user').order_by('-sent_date')
+        
+        # Get past assignments
+        context['past_assignments'] = Assignment.objects.filter(
+            equipment=self.object
+        ).select_related('user', 'user__department').order_by('-assigned_date')
+        
         return context
 
 
