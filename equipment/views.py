@@ -752,7 +752,7 @@ class RequestSummaryReportView(LoginRequiredMixin, UserPassesTestMixin, Template
             days_open = (today - r.created_at.date()).days if r.created_at else 0
 
             logs = r.logs.all().order_by('timestamp') if hasattr(r, 'logs') else []
-            timeline = []
+            timeline = [{'action': 'Created', 'timestamp': r.created_at, 'by': r.user.get_full_name() or r.user.username}]
             for log in logs[:10]:
                 timeline.append({
                     'action': f"{log.old_status} -> {log.new_status}",
