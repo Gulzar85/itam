@@ -15,15 +15,7 @@
                 </span>
                 Comprehensive Report
             </h1>
-            <p class="text-gray-500 mt-2 ml-14 font-medium">Detailed data export with calculations</p>
-        </div>
-        <div class="flex gap-2">
-            <button @click="exportCSV()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm print-btn">
-                <i data-lucide="download" class="w-4 h-4 text-custom-primary"></i> Export CSV
-            </button>
-            <button onclick="window.print()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm print-btn">
-                <i data-lucide="printer" class="w-4 h-4 text-custom-primary"></i> Print
-            </button>
+            <p class="text-gray-500 mt-2 ml-14 font-medium">Detailed equipment data with calculations</p>
         </div>
     </div>
 
@@ -181,14 +173,7 @@
 {% endblock %}
 
 {% block extra_css %}
-<style>
-@media print {
-    .sidebar, .print-btn, .no-print { display: none !important; }
-    .glass-card { box-shadow: none !important; border: 1px solid #ddd !important; }
-    body { background: white !important; }
-    .container { max-width: 100% !important; padding: 0 !important; }
-}
-</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables@1.13.8/dist/css/dataTables.min.css">
 {% endblock %}
 
 {% block extra_js %}
@@ -219,30 +204,6 @@ function tableReport() {
                     }
                 });
             }
-        },
-
-        exportCSV() {
-            const headers = [
-                'Tracking ID', 'Brand', 'Model', 'Category', 'Status', 
-                'Assigned To', 'Department', 'Assign Age', 'Equipment Age', 'Warranty Status', 'Cost', 'Vendor', 'Purchase Date'
-            ];
-            const rows = [headers];
-            
-            this.equipment.forEach(eq => {
-                rows.push([
-                    eq.tracking_id, eq.brand, eq.model_number, eq.category, eq.status_display,
-                    eq.assigned_to || '-', eq.department || '-', 
-                    eq.assign_age || '-', eq.equip_age || '-', 
-                    eq.warranty_status || '-', eq.purchase_cost, eq.vendor || '-', eq.purchase_date || '-'
-                ].map(c => '"' + String(c).replace(/"/g, '""') + '"'));
-            });
-
-            const csv = rows.map(r => r.join(',')).join('\n');
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'itam_comprehensive_report_' + new Date().toISOString().split('T')[0] + '.csv';
-            link.click();
         }
     }
 }

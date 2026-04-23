@@ -17,11 +17,6 @@
             </h1>
             <p class="text-gray-500 mt-2 ml-14 font-medium">Analyze request processing time and bottlenecks</p>
         </div>
-        <div class="flex gap-2">
-            <button @click="exportCSV()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50">
-                <i data-lucide="download" class="w-4 h-4 text-custom-primary"></i> Export
-            </button>
-        </div>
     </div>
 
     <form method="GET" class="glass-card rounded-3xl p-6 mb-8 border border-gray-200">
@@ -148,16 +143,6 @@ function reportApp() {
                     this.dt = $(table).DataTable({ pageLength: 25, order: [[6, 'desc']] });
                 }
             });
-        },
-        exportCSV() {
-            if (!this.dt) return;
-            let csv = [['ID', 'Type', 'User', 'Priority', 'Status', 'Created', 'Total Days', 'Manager Time', 'IT Time']];
-            this.dt.rows().data().each(row => csv.push(row.map(c => '"' + String(c).replace(/"/g, '""') + '"')));
-            const blob = new Blob([csv.map(r => r.join(',')).join('\n')], { type: 'text/csv' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'turnaround_report_' + new Date().toISOString().split('T')[0] + '.csv';
-            link.click();
         }
     }
 }
