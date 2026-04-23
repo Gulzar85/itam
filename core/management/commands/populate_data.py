@@ -42,6 +42,7 @@ class Command(BaseCommand):
         self.create_notification_templates()
 
         requests_list = self.create_requests(employees, categories, brands, vendors, equipment_list, it_admin)
+        maintenance_records = self.create_maintenance_records(requests_list, vendors, equipment_list, it_admin)
         self.create_assignments(equipment_list, employees, it_admin)
         self.create_equipment_logs(equipment_list, it_admin)
         self.create_notifications(employees, it_admin, requests_list)
@@ -441,6 +442,39 @@ class Command(BaseCommand):
 
         self.stdout.write(f'  Created {len(requests_list)} requests')
         return requests_list
+
+    def create_maintenance_records(self, requests_list, vendors, equipment_list, it_admin):
+        from equipment.models import MaintenanceRecord
+        from django.utils import timezone
+        
+        maintenance_data = [
+            (requests_list[3], equipment_list[18], vendors['Repair Masters'], 'Laptop not powering on - motherboard issue', 500, None, 'COMPLETED'),
+            (requests_list[6], equipment_list[41], vendors['Quick Fix Services'], 'Phone screen cracked - replaced display', 350, None, 'COMPLETED'),
+            (requests_list[9], equipment_list[19], vendors['Repair Masters'], 'Printer paper jam - roller replacement', 200, None, 'IN_PROGRESS'),
+        ]
+        
+        count = 0
+        for req, eq, vendor, issue, est_cost, actual_cost, status in maintenance_data:
+            m_record, created = MaintenanceRecord.objects.get_or_create(
+                request=req,
+                defaults={
+                    'equipment': eq,
+                    'vendor': vendor,
+                    'issue_description': issue,
+                    'estimated_cost': est_cost,
+                    'actual_cost': actual_cost if actual_cost else None,
+                    'sent_date': date.today() - timedelta(days=random.randint(5, 30)),
+                    'expected_return_date': date.today() + timedelta(days=7),
+                    'actual_return_date': date.today() - timedelta(days=2) if actual_cost and status == 'COMPLETED' else None,
+                    'status': status,
+                    'repair_notes': f'Repair {status.lower()} - {issue}'
+                }
+            )
+            if created:
+                count += 1
+        
+        self.stdout.write(f'  Created {count} maintenance records')
+        return count
 
     def create_assignments(self, equipment_list, employees, it_admin):
         count = 0
