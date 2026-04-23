@@ -350,57 +350,90 @@ class DashboardReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        request = self.request
 
-        # 1. Base Stats
-        total_eq = Equipment.objects.count()
-        total_val = Equipment.objects.aggregate(
-            total=Sum('purchase_cost'))['total'] or 0
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        category = request.GET.get('category')
+        brand = request.GET.get('brand')
+        status = request.GET.get('status')
 
-        # 2. Category & Brand Aggregates
+        from datetime import datetime
+        from django.utils.timezone import make_aware
+
+        eq_query = Equipment.objects.all()
+        req_query = Request.objects.all()
+        maint_query = MaintenanceRecord.objects.all()
+
+        if start_date:
+            start = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
+            eq_query = eq_query.filter(purchase_date__gte=start)
+            req_query = req_query.filter(created_at__gte=start)
+            maint_query = maint_query.filter(sent_date__gte=start)
+
+        if end_date:
+            end = make_aware(datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+            eq_query = eq_query.filter(purchase_date__lte=end)
+            req_query = req_query.filter(created_at__lte=end)
+            maint_query = maint_query.filter(sent_date__lte=end)
+
+        if category:
+            eq_query = eq_query.filter(category_id=category)
+
+        if brand:
+            eq_query = eq_query.filter(brand_id=brand)
+
+        if status:
+            eq_query = eq_query.filter(status=status)
+
+        total_eq = eq_query.count()
+        total_val = eq_query.aggregate(total=Sum('purchase_cost'))['total'] or 0
+
         cat_qs = Category.objects.annotate(
-            count=Count('equipments')).order_by('-count')[:5]
-        brand_qs = Brand.objects.annotate(
-            count=Count('equipments')).order_by('-count')[:5]
+            count=Count('equipments')).filter(
+            equipments__in=eq_query).values('name').annotate(
+            count=Count('id')).order_by('-count')[:5]
+        if category:
+            cat_qs = Category.objects.filter(id=category).annotate(count=Count('equipments'))
 
-        # 3. Trends & Financials
-        cost_qs = Equipment.objects.exclude(purchase_date__isnull=True).annotate(
+        brand_qs = Brand.objects.annotate(
+            count=Count('equipments')).filter(
+            equipments__in=eq_query).values('name').annotate(
+            count=Count('id')).order_by('-count')[:5]
+        if brand:
+            brand_qs = Brand.objects.filter(id=brand).annotate(count=Count('equipments'))
+
+        cost_qs = eq_query.exclude(purchase_date__isnull=True).annotate(
             month=TruncMonth('purchase_date')).values('month').annotate(total=Sum('purchase_cost')).order_by('month')
 
-        trends_qs = Request.objects.annotate(month=TruncMonth('created_at')).values(
+        trends_qs = req_query.annotate(month=TruncMonth('created_at')).values(
             'month').annotate(count=Count('id')).order_by('month')
 
-        # 4. Operations (Priority, Vendors, Maintenance)
-        prio_data = Request.objects.values(
-            'priority').annotate(count=Count('id'))
-        vendor_qs = Vendor.objects.annotate(repair_count=Count(
-            'repairing_items')).order_by('-repair_count')[:5]
+        prio_data = req_query.values('priority').annotate(count=Count('id'))
+        vendor_qs = Vendor.objects.annotate(repair_count=Count('repairing_items')).order_by('-repair_count')[:5]
 
-        # FIXED: Using actual_cost with a fallback to estimated_cost
-        maint_qs = MaintenanceRecord.objects.exclude(sent_date__isnull=True).annotate(
+        maint_qs = maint_query.exclude(sent_date__isnull=True).annotate(
             month=TruncMonth('sent_date')
         ).values('month').annotate(
             total_cost=Sum(Coalesce('actual_cost', 'estimated_cost'))
         ).order_by('month')
 
-        # 5. Build JSON
         analytics_data = {
             'health': {
                 'labels': ['Available', 'Assigned', 'Repairing', 'Damaged'],
                 'series': [
-                    Equipment.objects.filter(status='AVAILABLE').count(),
-                    Equipment.objects.filter(status='ASSIGNED').count(),
-                    Equipment.objects.filter(status='REPAIRING').count(),
-                    Equipment.objects.filter(status='DAMAGED').count()
+                    eq_query.filter(status='AVAILABLE').count(),
+                    eq_query.filter(status='ASSIGNED').count(),
+                    eq_query.filter(status='REPAIRING').count(),
+                    eq_query.filter(status='DAMAGED').count()
                 ]
             },
             'categories': {
-                'labels': list(cat_qs.values_list('name', flat=True)),
-                'series': list(cat_qs.values_list('count', flat=True))
+                'labels': [c['name'] for c in cat_qs],
+                'series': [c['count'] for c in cat_qs]
             },
-            # To this (Safe Version):
             'costs': {
                 'labels': [m['month'].strftime('%b %Y') for m in cost_qs if m['month']],
-                # Added 'or 0'
                 'series': [float(m['total'] or 0) for m in cost_qs]
             },
             'trends': {
@@ -408,8 +441,8 @@ class DashboardReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
                 'series': [m['count'] for m in trends_qs]
             },
             'brands': {
-                'labels': list(brand_qs.values_list('name', flat=True)),
-                'series': list(brand_qs.values_list('count', flat=True))
+                'labels': [b['name'] for b in brand_qs],
+                'series': [b['count'] for b in brand_qs]
             },
             'priority': {
                 'labels': [p['priority'] for p in prio_data],
@@ -427,10 +460,19 @@ class DashboardReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
 
         context.update({
             'total_equipment': total_eq,
-            'available_equipment': Equipment.objects.filter(status='AVAILABLE').count(),
-            'assigned_equipment': Equipment.objects.filter(status='ASSIGNED').count(),
-            'repairing_equipment': Equipment.objects.filter(status='REPAIRING').count(),
+            'available_equipment': eq_query.filter(status='AVAILABLE').count(),
+            'assigned_equipment': eq_query.filter(status='ASSIGNED').count(),
+            'repairing_equipment': eq_query.filter(status='REPAIRING').count(),
             'total_value': total_val,
-            'analytics_json': json.dumps(analytics_data)
+            'analytics_json': json.dumps(analytics_data),
+            'categories': Category.objects.all(),
+            'brands': Brand.objects.all(),
+            'status_choices': Equipment.STATUS_CHOICES,
+            'filter_start_date': start_date or '',
+            'filter_end_date': end_date or '',
+            'filter_category': category or '',
+            'filter_brand': brand or '',
+            'filter_status': status or '',
+            'filtered_equipment': list(eq_query.select_related('brand', 'category')[:100]),
         })
         return context

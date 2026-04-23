@@ -52,4 +52,6 @@ urlpatterns = [
     path('list/', views.EquipmentListView.as_view(), name='inventory_list'),
     path('dashboard/report/', views.DashboardReportView.as_view(),
          name='dashboard_report'),
+    path('reports/comprehensive/', views.DashboardReportView.as_view(),
+         name='comprehensive_report'),
 ]
