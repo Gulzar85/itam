@@ -172,17 +172,12 @@
 </div>
 {% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables@1.13.8/dist/css/dataTables.min.css">
-{% endblock %}
-
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/datatables@1.13.8/dist/js/dataTables.min.js"></script>
 <script>
 function tableReport() {
     return {
         dt: null,
-        equipment: {{ filtered_equipment_json|safe }},
         
         init() {
             initLucide();
