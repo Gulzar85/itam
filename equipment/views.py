@@ -57,6 +57,9 @@ class EquipmentListView(LoginRequiredMixin, ListView):
 
         search = self.request.GET.get('search')
         if search:
+            # Clean QR code format (e.g., "EQ:EQ-2026-0001" or "SN:DELL-001")
+            search = search.replace('EQ:', '').replace('SN:', '').strip()
+            
             queryset = queryset.filter(
                 Q(serial_number__icontains=search) |
                 Q(tracking_id__icontains=search) |
