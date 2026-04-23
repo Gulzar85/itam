@@ -1,0 +1,60 @@
+{% load crispy_forms_tags %}
+
+{% if form %}
+<form method="post" enctype="multipart/form-data" class="{{css_class}}">
+    {% csrf_token %}
+    
+    {% for field in form %}
+        {% if field.name in hidden_fields %}
+            {{ field.as_hidden }}
+        {% else %}
+        <div class="form-group mb-5">
+            <label for="{{ field.id_for_label }}" class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                {% if field.icon %}
+                    <i data-lucide="{{ field.icon }}" class="w-4 h-4" style="color: var(--primary-color);"></i>
+                {% else %}
+                    <i data-lucide="{{ field.icon_name|default:'file-text' }}" class="w-4 h-4" style="color: var(--primary-color);"></i>
+                {% endif %}
+                {{ field.label }}
+                {% if field.field.required %}
+                    <span class="text-red-500">*</span>
+                {% endif %}
+            </label>
+            
+            {{ field }}
+            
+            {% if field.help_text %}
+            <p class="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
+                <i data-lucide="info" class="w-3 h-3"></i>
+                {{ field.help_text }}
+            </p>
+            {% endif %}
+            
+            {% if field.errors %}
+            <div class="mt-2 flex items-center gap-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                {% for error in field.errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endfor %}
+    
+    {% block form_buttons %}
+    <div class="flex gap-3 pt-4">
+        <button type="submit" class="flex items-center gap-2 text-white px-5 py-2.5 rounded-xl hover:opacity-90 transition-all font-medium shadow-md" style="background-color: var(--primary-color);">
+            <i data-lucide="{{ submit_icon|default:'save' }}" class="w-4 h-4"></i>
+            {{ submit_text|default:'Save' }}
+        </button>
+        {% if cancel_url %}
+        <a href="{{ cancel_url }}" class="flex items-center gap-2 bg-gray-100 text-gray-700 px-5 py-2.5 rounded-xl hover:bg-gray-200 transition-all font-medium">
+            <i data-lucide="x" class="w-4 h-4"></i>
+            Cancel
+        </a>
+        {% endif %}
+    </div>
+    {% endblock %}
+</form>
+{% endif %}

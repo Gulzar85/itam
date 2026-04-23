@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-6 py-8">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Business Profile</h1>
+            <p class="text-sm text-slate-500">Manage your company information</p>
+        </div>
+        {% if user.role == 'IT_ADMIN' or user.is_staff %}
+        <a href="{% url 'core:business_info_update' %}" class="flex items-center gap-2 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5" style="background-color: var(--primary-color);">
+            <i data-lucide="pencil" class="w-4 h-4"></i> Edit Profile
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Main Profile Card -->
+    <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-6">
+        <!-- Hero Banner -->
+        <div class="h-40 relative" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 70%, #6366f1 100%);">
+            <div class="absolute -bottom-12 left-8">
+                {% if business.logo %}
+                <img src="{{ business.logo.url }}" class="w-24 h-24 rounded-2xl border-4 border-white shadow-xl bg-white object-contain p-2">
+                {% else %}
+                <div class="w-24 h-24 rounded-2xl border-4 border-white shadow-xl bg-white flex items-center justify-center">
+                    <i data-lucide="building-2" class="w-10 h-10 text-slate-300"></i>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="pt-16 px-8 pb-8">
+            <!-- Company Name & Tagline -->
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">{{ business.name }}</h2>
+                    <p class="text-slate-500 mt-1">{{ business.description|truncatechars:150 }}</p>
+                </div>
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100">
+                    <span class="w-2 h-2 rounded-full" style="background-color: var(--primary-color);"></span>
+                    <span class="text-xs font-medium text-slate-600">Active</span>
+                </div>
+            </div>
+
+            <!-- Contact Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                <!-- Email -->
+                <div class="group p-4 rounded-2xl border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: color-mix(in srgb, var(--primary-color) 10%, transparent);">
+                            <i data-lucide="mail" class="w-5 h-5" style="color: var(--primary-color);"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-400 font-medium">Email Address</p>
+                            <p class="text-sm font-semibold text-slate-700 truncate">{{ business.contact_email }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phone -->
+                <div class="group p-4 rounded-2xl border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-emerald-50">
+                            <i data-lucide="phone" class="w-5 h-5 text-emerald-500"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-400 font-medium">Phone Number</p>
+                            <p class="text-sm font-semibold text-slate-700">{{ business.contact_phone }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Website -->
+                <div class="group p-4 rounded-2xl border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-50">
+                            <i data-lucide="globe" class="w-5 h-5 text-blue-500"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-400 font-medium">Website</p>
+                            <a href="{{ business.website }}" target="_blank" class="text-sm font-semibold hover:underline" style="color: var(--primary-color);">
+                                {{ business.website|slice:"8:"|truncatechars:25 }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address -->
+            <div class="mt-6 p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style="background-color: var(--primary-color);">
+                        <i data-lucide="map-pin" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400 font-medium uppercase tracking-wide">Business Address</p>
+                        <p class="text-sm text-slate-700 mt-1">{{ business.address }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Social Media Section -->
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="share-2" class="w-5 h-5" style="color: var(--primary-color);"></i>
+            Connected Platforms
+        </h3>
+        <a href="{% url 'core:social_media_list' %}" class="text-sm font-medium flex items-center gap-1 hover:opacity-80" style="color: var(--primary-color);">
+            View All <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+    </div>
+
+    {% if business.social_links.all %}
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        {% for link in business.social_links.all %}
+        <a href="{{ link.url }}" target="_blank" class="group bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center gap-3">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center transition-colors" style="background-color: color-mix(in srgb, var(--primary-color) 10%, transparent);">
+                <i class="{{ link.icon_class }} text-xl" style="color: var(--primary-color);"></i>
+            </div>
+            <span class="text-xs font-medium text-slate-600 group-hover:text-slate-800 transition-colors">{{ link.get_platform_display }}</span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl border border-slate-100 p-10 text-center">
+        <div class="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style="background-color: color-mix(in srgb, var(--primary-color) 10%, transparent);">
+            <i data-lucide="link" class="w-8 h-8" style="color: var(--primary-color);"></i>
+        </div>
+        <h4 class="text-lg font-semibold text-slate-700">No Social Links</h4>
+        <p class="text-sm text-slate-500 mt-1 mb-4">Add your social media profiles to connect with customers</p>
+        <a href="{% url 'core:social_media_create' %}" class="inline-flex items-center gap-2 text-white px-4 py-2 rounded-xl font-medium transition-all hover:opacity-90" style="background-color: var(--primary-color);">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add Social Link
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-3 gap-4 mt-8">
+        <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--primary-color);">
+                    <i data-lucide="link" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-800">{{ business.social_links.count|default:0 }}</p>
+                    <p class="text-xs text-slate-500">Connected Links</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-100">
+                    <i data-lucide="calendar" class="w-5 h-5 text-emerald-600"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-800">{{ business.created_at|date:"M Y"|default:"-" }}</p>
+                    <p class="text-xs text-slate-500">Created</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-100">
+                    <i data-lucide="clock" class="w-5 h-5 text-purple-600"></i>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-slate-800">{{ business.updated_at|date:"M d"|default:"-" }}</p>
+                    <p class="text-xs text-slate-500">Last Updated</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

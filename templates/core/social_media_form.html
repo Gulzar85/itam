@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="mb-8">
+        <div class="flex items-center gap-4 mb-4">
+            <a href="{% url 'core:social_media_list' %}" class="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </a>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">
+                    {% if form.instance.pk %}Edit Social Media Link{% else %}Add Social Media Link{% endif %}
+                </h1>
+                <p class="text-gray-600">{% if form.instance.pk %}Update social media details{% else %}Add a new social media platform{% endif %}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <div>
+                <label for="{{ form.platform.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    {{ form.platform.label }}
+                </label>
+                {{ form.platform }}
+                {% if form.platform.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.platform.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.url.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    {{ form.url.label }}
+                </label>
+                {{ form.url }}
+                {% if form.url.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.url.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="flex gap-4 pt-6 border-t border-gray-200">
+                <button type="submit" class="text-white px-6 py-3 rounded-xl hover:opacity-90 transition-colors font-medium" style="background-color: var(--primary-color);">
+                    <i data-lucide="save" class="w-4 h-4 inline mr-2"></i>
+                    {% if form.instance.pk %}Update Link{% else %}Add Link{% endif %}
+                </button>
+                <a href="{% url 'core:social_media_list' %}" class="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-200 transition-colors font-medium">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    input, select, textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 0.75rem;
+        border: 1px solid #e5e7eb;
+        outline: none;
+        transition: all 0.2s ease;
+        background-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    input:focus, select:focus, textarea:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px var(--primary-color-alpha);
+    }
+    
+    label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

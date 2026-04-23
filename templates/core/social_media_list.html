@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Social Media Links</h1>
+                <p class="text-gray-600 mt-1">Manage your organization's social media presence</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="{% url 'core:social_media_create' %}" class="text-white px-4 py-2 rounded-lg hover:opacity-90 transition-colors" style="background-color: var(--primary-color);">
+                    <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>
+                    Add Social Media
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for social_link in social_links %}
+        <div class="bg-white rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border border-slate-100">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: rgba(var(--primary-color-rgb, 59, 130, 246), 0.1);">
+                    <i class="{{ social_link.icon_class }} text-3xl" style="color: var(--primary-color);"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">{{ social_link.get_platform_display }}</h3>
+                    <p class="text-sm text-gray-600 truncate max-w-[200px]">{{ social_link.url }}</p>
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-3 border-t border-gray-100">
+                <a href="{{ social_link.url }}" target="_blank" class="flex-1 text-white px-3 py-2 rounded-lg text-center text-sm font-medium hover:opacity-90 transition-colors" style="background-color: var(--primary-color);">
+                    Visit Link
+                </a>
+                <a href="{% url 'core:social_media_update' social_link.pk %}" class="flex-1 bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors text-center text-sm font-medium">
+                    Edit
+                </a>
+                <a href="{% url 'core:social_media_delete' social_link.pk %}" class="flex-1 bg-red-100 text-red-700 px-3 py-2 rounded-lg hover:bg-red-200 transition-colors text-center text-sm font-medium">
+                    Delete
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full glass p-12 rounded-2xl text-center">
+            <i data-lucide="share-2" class="w-16 h-16 mx-auto mb-4 text-gray-400"></i>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">No social media links</h3>
+            <p class="text-gray-500 mb-4">Add your first social media link to connect with your audience.</p>
+            <a href="{% url 'core:social_media_create' %}" class="text-white px-6 py-3 rounded-lg hover:opacity-90 transition-colors inline-block" style="background-color: var(--primary-color);">
+                <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>
+                Add Social Media
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

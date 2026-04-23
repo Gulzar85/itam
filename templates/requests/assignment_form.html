@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="mb-8">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'equipment:equipment_list' %}" class="p-2 bg-white rounded-xl shadow-sm hover:bg-gray-50 transition-colors">
+                <i data-lucide="arrow-left" class="w-5 h-5 text-gray-600"></i>
+            </a>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Assign Equipment</h1>
+                <p class="text-gray-600 mt-1">Assign an IT asset to a staff member</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="space-y-2">
+                <label for="{{ form.equipment.id_for_label }}" class="block text-sm font-bold text-gray-700 ml-1">
+                    Select Equipment
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i data-lucide="monitor" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                    <select name="{{ form.equipment.name }}" id="{{ form.equipment.id_for_label }}" 
+                            class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 outline-none appearance-none bg-white/50 transition-all"
+                            style="focus:ring-color: var(--primary-color);">
+                        {% for choice in form.equipment.field.choices %}
+                            <option value="{{ choice.0 }}" {% if form.equipment.value == choice.0 %}selected{% endif %}>
+                                {{ choice.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if form.equipment.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.equipment.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="space-y-2">
+                <label for="{{ form.user.id_for_label }}" class="block text-sm font-bold text-gray-700 ml-1">
+                    Assign To User
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i data-lucide="user" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                    <select name="{{ form.user.name }}" id="{{ form.user.id_for_label }}" 
+                            class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 outline-none appearance-none bg-white/50 transition-all"
+                            style="focus:ring-color: var(--primary-color);">
+                        {% for choice in form.user.field.choices %}
+                            <option value="{{ choice.0 }}" {% if form.user.value == choice.0 %}selected{% endif %}>
+                                {{ choice.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if form.user.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.user.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="space-y-2">
+                <label for="{{ form.notes.id_for_label }}" class="block text-sm font-bold text-gray-700 ml-1">
+                    Assignment Notes
+                </label>
+                <div class="relative">
+                    <textarea name="{{ form.notes.name }}" id="{{ form.notes.id_for_label }}" rows="4" 
+                              placeholder="Add any specific details or condition of the item..."
+                              class="w-full p-4 rounded-xl border border-gray-200 focus:ring-2 outline-none bg-white/50 transition-all"
+                              style="focus:ring-color: var(--primary-color);">{{ form.notes.value|default_if_none:'' }}</textarea>
+                </div>
+                {% if form.notes.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.notes.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="flex gap-4 pt-4">
+                <button type="submit" class="flex-1 text-white py-4 rounded-2xl font-bold transition-all shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95" 
+                        style="background-color: var(--primary-color); box-shadow: 0 10px 15px -3px var(--primary-color-alpha);">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    Confirm Assignment
+                </button>
+                <a href="{% url 'equipment:equipment_list' %}" class="px-8 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-all text-center">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="mt-6 p-4 rounded-2xl flex gap-3" style="background-color: rgba(var(--primary-color-rgb, 59, 130, 246), 0.1); border: 1px solid rgba(var(--primary-color-rgb, 59, 130, 246), 0.2);">
+        <i data-lucide="info" class="w-5 h-5 shrink-0" style="color: var(--primary-color);"></i>
+        <p class="text-sm" style="color: var(--primary-color);">
+            <strong>Note:</strong> Once assigned, the equipment status will automatically update to <b>Assigned</b> and an audit log entry will be created.
+        </p>
+    </div>
+</div>
+
+<style>
+    select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px var(--primary-color-alpha);
+    }
+    
+    button:active {
+        transform: scale(0.98);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

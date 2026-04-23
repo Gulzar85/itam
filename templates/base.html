@@ -1,0 +1,157 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ business_info.name|default:"IT Asset Manager" }}</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">  
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <link rel="icon" type="image/png" href="{% if business_info.logo %}{{ business_info.logo.url }}{% else %}{% static 'favicon.png' %}{% endif %}">     
+    
+    <style>[x-cloak] { display: none !important; }</style>
+<script>
+        // CRITICAL: Yeh Tailwind ko batata hai ke custom-primary ka matlab CSS variable hai
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'custom-primary': 'var(--primary-color)',
+                        'custom-secondary': 'var(--secondary-color)',
+                    },
+                    boxShadow: {
+                        'custom': '0 10px 15px -3px var(--primary-color-alpha)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+
+        :root {
+            --primary-color: {{ business_info.primary_color|default:"#3b82f6" }};
+            --secondary-color: {{ business_info.secondary_color|default:"#f9fafb" }};
+            --primary-color-alpha: {{ business_info.primary_color|default:"#3b82f6" }}33;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .bg-custom-primary { background-color: var(--primary-color) !important; }
+        .text-custom-primary { color: var(--primary-color) !important; }
+        .border-custom-primary { border-color: var(--primary-color) !important; }
+        .hover\:bg-custom-primary:hover { background-color: var(--primary-color) !important; }
+        .hover\:text-custom-primary:hover { color: var(--primary-color) !important; }
+
+        body {
+            background-color: var(--secondary-color);
+        }
+
+        @keyframes bounce-in {
+            0% { transform: scale(0.9); opacity: 0; }
+            70% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-bounce-in {
+            animation: bounce-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .notification-badge {
+            background-color: var(--primary-color);
+        }
+
+        .input-focus:focus {
+            box-shadow: 0 0 0 4px var(--primary-color-alpha);
+            border-color: var(--primary-color);
+        }
+    </style>
+</head>
+
+<body class="font-sans text-gray-900">
+    <div class="flex h-screen overflow-hidden">
+        {% include 'includes/sidebar.html' %}
+        <div id="main-content" class="flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300" style="margin-left: 260px;">
+
+            {% include 'includes/navbar.html' %}
+
+            {% if messages %}
+            <div class="fixed bottom-5 right-5 z-[60] space-y-3">
+                {% for message in messages %}
+                <div class="bg-white px-6 py-4 rounded-2xl shadow-lg flex items-center gap-4 border-l-4
+                    {% if message.tags == 'success' %} border-green-500 {% else %} border-red-500 {% endif %}
+                    animate-bounce-in notification-toast">
+
+                    <div class="{% if message.tags == 'success' %}text-green-500{% else %}text-red-500{% endif %}">
+                        <i data-lucide="{% if message.tags == 'success' %}check-circle{% else %}alert-circle{% endif %}" class="w-6 h-6"></i>
+                    </div>
+
+                    <div class="flex flex-col">
+                        <span class="text-xs font-black uppercase tracking-wider" style="color: var(--primary-color)">
+                            {{ message.tags|default:"Notification" }}
+                        </span>
+                        <span class="font-medium text-gray-800">{{ message }}</span>
+                    </div>
+
+                    <button onclick="$(this).parent().fadeOut()" class="ml-auto text-gray-400 hover:text-gray-600">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <main class="p-6 overflow-y-auto flex-1 bg-opacity-50">
+                {% block content %}{% endblock %}
+            </main>
+
+        </div>
+    </div>
+
+    {% include 'includes/remarks_modal.html' %}
+
+    <script>
+        // Icons initialize karne ke liye function
+        function initLucide() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        $(document).ready(function() {
+            initLucide();
+            setTimeout(() => {
+                $('.notification-toast').fadeOut('slow', function() {
+                    $(this).remove();
+                });
+            }, 4000);
+        });
+
+        // Alpine.js ke saath re-initialize karna zaroori hai
+        document.addEventListener('alpine:initialized', () => {
+            initLucide();
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,42 @@
+<div id="remarksModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeRemarksModal()"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 m-4">
+            <h3 class="text-lg font-bold text-slate-800 mb-2">Add Remarks</h3>
+            <p class="text-sm text-slate-500 mb-4">Enter your remarks for this action (optional)</p>
+            <textarea id="remarksInput" rows="3" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none resize-none" placeholder="Enter remarks..."></textarea>
+            <div class="flex gap-3 mt-4">
+                <button onclick="closeRemarksModal()" class="flex-1 py-3 rounded-xl font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+                <button onclick="submitRemarks()" class="flex-1 py-3 rounded-xl font-semibold text-white" style="background-color: var(--primary-color);">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let remarksCallback = null;
+
+function openRemarksModal(callback) {
+    remarksCallback = callback;
+    document.getElementById('remarksModal').classList.remove('hidden');
+    document.getElementById('remarksInput').value = '';
+    document.getElementById('remarksInput').focus();
+}
+
+function closeRemarksModal() {
+    document.getElementById('remarksModal').classList.add('hidden');
+    remarksCallback = null;
+}
+
+function submitRemarks() {
+    const value = document.getElementById('remarksInput').value;
+    if (remarksCallback) {
+        remarksCallback(value);
+    }
+    closeRemarksModal();
+}
+
+function openRemarksPrompt(callback) {
+    openRemarksModal(callback);
+}
+</script>

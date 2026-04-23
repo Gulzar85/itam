@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-8">
+        <div class="flex items-center gap-4 mb-4">
+            <a href="{% url 'equipment:category_list' %}" class="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </a>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">
+                    {% if form.instance.pk %}Edit Category{% else %}Add New Category{% endif %}
+                </h1>
+                <p class="text-gray-600">{% if form.instance.pk %}Update category details{% else %}Add a new equipment classification{% endif %}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <form method="post" class="space-y-8">
+            {% csrf_token %}
+
+            <div class="space-y-4">
+                <h2 class="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 flex items-center gap-2">
+                    <i data-lucide="folder" class="w-5 h-5" style="color: var(--primary-color);"></i>
+                    Category Information
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {% include 'forms/field.html' with field=form.name %}
+                    {% include 'forms/field.html' with field=form.icon %}
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {% include 'forms/field.html' with field=form.description %}
+                </div>
+                <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                    <span class="text-sm font-medium text-gray-600">Icon Preview:</span>
+                    <div id="icon-preview" class="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-md">
+                        <i data-lucide="{{ form.icon.value|default:'folder' }}" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <span class="text-xs text-gray-400">Type icon name and see preview</span>
+                </div>
+            </div>
+
+            <div class="flex gap-4 pt-6 border-t border-gray-200">
+                <button type="submit" class="flex items-center gap-2 text-white px-6 py-3 rounded-xl hover:opacity-90 transition-colors font-medium shadow-md" style="background-color: var(--primary-color);">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    {% if form.instance.pk %}Update Category{% else %}Add Category{% endif %}
+                </button>
+                <a href="{% url 'equipment:category_list' %}" class="flex items-center gap-2 bg-gray-100 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-200 transition-colors font-medium">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+    
+    const iconInput = document.querySelector('input[name="icon"]');
+    const iconPreview = document.getElementById('icon-preview');
+    
+    if (iconInput && iconPreview) {
+        iconInput.addEventListener('input', function() {
+            const iconName = this.value || 'folder';
+            const iconElement = iconPreview.querySelector('i');
+            if (iconElement) {
+                iconElement.setAttribute('data-lucide', iconName);
+                if (window.lucide) {
+                    lucide.createIcons({
+                        nodes: [iconPreview]
+                    });
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

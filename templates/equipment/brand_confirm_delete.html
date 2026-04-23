@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="mb-8">
+        <div class="flex items-center gap-4 mb-4">
+            <a href="{% url 'equipment:brand_detail' object.pk %}" class="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </a>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Delete Brand</h1>
+                <p class="text-gray-600">Confirm deletion of brand</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="text-center">
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-6">
+                <i data-lucide="alert-triangle" class="h-8 w-8 text-red-600"></i>
+            </div>
+
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Are you sure?</h2>
+
+            <p class="text-gray-600 mb-6">
+                You are about to delete the brand <strong>"{{ object.name }}"</strong>.
+                This action cannot be undone.
+            </p>
+
+            <div class="bg-gray-50 rounded-xl p-6 mb-8 text-left">
+                <h3 class="font-semibold text-gray-800 mb-3">Brand Details:</h3>
+                <dl class="space-y-2">
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Name:</dt>
+                        <dd class="font-medium">{{ object.name }}</dd>
+                    </div>
+                    {% if object.website %}
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Website:</dt>
+                        <dd class="font-medium"><a href="{{ object.website }}" target="_blank" class="hover:underline" style="color: var(--primary-color);">{{ object.website }}</a></dd>
+                    </div>
+                    {% endif %}
+                    {% if object.support_email %}
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Support Email:</dt>
+                        <dd class="font-medium">{{ object.support_email }}</dd>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between">
+                        <dt class="text-gray-600">Equipment Count:</dt>
+                        <dd class="font-medium">{{ object.equipment_set.count }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-8">
+                <div class="flex">
+                    <i data-lucide="alert-circle" class="h-5 w-5 text-yellow-400 mr-3 flex-shrink-0"></i>
+                    <div class="text-sm text-yellow-700">
+                        <p class="font-medium">Warning:</p>
+                        <p>Deleting this brand will affect {{ object.equipment_set.count }} equipment item(s). The equipment will remain but will no longer be associated with this brand.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-4 justify-center">
+                <form method="post" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-red-600 text-white px-6 py-3 rounded-xl hover:bg-red-700 transition-colors font-medium">
+                        <i data-lucide="trash-2" class="w-4 h-4 inline mr-2"></i>
+                        Yes, Delete Brand
+                    </button>
+                </form>
+                <a href="{% url 'equipment:brand_detail' object.pk %}" class="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-200 transition-colors font-medium">
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

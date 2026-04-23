@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center gap-4 mb-4">
+            <button onclick="history.back()" class="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </button>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">My Profile</h1>
+                <p class="text-gray-600">Manage your account information</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Profile Overview -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <div class="text-center">
+                    <!-- User Avatar with dynamic color -->
+                    <div class="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4" style="background-color: var(--primary-color); opacity: 0.1;">
+                        <i data-lucide="user" class="w-12 h-12" style="color: var(--primary-color);"></i>
+                    </div>
+
+                    <!-- User Info -->
+                    <h2 class="text-xl font-semibold text-gray-900">
+                        {{ user.get_full_name|default:user.username }}
+                    </h2>
+                    <p class="text-gray-600 mb-2">{{ user.email }}</p>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                        style="color: var(--primary-color); background-color: rgba(var(--primary-color-rgb, 59, 130, 246), 0.1);">
+                        {{ user.get_role_display }}
+                    </span>
+
+                    {% if user.department %}
+                    <p class="text-sm text-gray-500 mt-2">{{ user.department.name }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="mt-6 space-y-3">
+                    <a href="{% url 'accounts:profile_edit' %}"
+                       class="w-full text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                       style="background-color: var(--primary-color);">
+                        <i data-lucide="edit" class="w-4 h-4"></i>
+                        Edit Profile
+                    </a>
+                    <a href="{% url 'accounts:change_password' %}"
+                       class="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="lock" class="w-4 h-4"></i>
+                        Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Details (unchanged structure, only dynamic colors where needed) -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Personal Information -->
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="user" class="w-5 h-5" style="color: var(--primary-color);"></i>
+                    Personal Information
+                </h3>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">First Name</label>
+                        <p class="text-gray-900">{{ user.first_name|default:'Not provided' }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Last Name</label>
+                        <p class="text-gray-900">{{ user.last_name|default:'Not provided' }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Username</label>
+                        <p class="text-gray-900">{{ user.username }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Email</label>
+                        <p class="text-gray-900">{{ user.email }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Phone Number</label>
+                        <p class="text-gray-900">{{ user.phone_number|default:'Not provided' }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Department</label>
+                        <p class="text-gray-900">{{ user.department.name|default:'Not assigned' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Information -->
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="shield" class="w-5 h-5" style="color: var(--primary-color);"></i>
+                    Account Information
+                </h3>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Role</label>
+                        <p class="text-gray-900">{{ user.get_role_display }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Account Status</label>
+                        <p class="text-gray-900">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Active
+                            </span>
+                        </p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Member Since</label>
+                        <p class="text-gray-900">{{ user.date_joined|date:"M d, Y" }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Last Login</label>
+                        <p class="text-gray-900">{{ user.last_login|date:"M d, Y H:i"|default:'Never' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

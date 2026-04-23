@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Notifications</h1>
+                <p class="text-gray-600 mt-1">Stay updated with your requests and system alerts</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="markAllAsRead()" class="text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all shadow-lg flex items-center gap-2" style="background-color: var(--primary-color); box-shadow: 0 10px 15px -3px var(--primary-color-alpha);">
+                    <i data-lucide="check-check" class="w-4 h-4"></i>
+                    Mark All Read
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-4">
+        {% for notification in notifications %}
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 {% if not notification.is_read %}border-l-4{% endif %} hover:shadow-lg transition-all duration-300" {% if not notification.is_read %}style="border-left-color: var(--primary-color);"{% endif %}>
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center 
+                        {% if notification.priority == 'CRITICAL' %}bg-red-100
+                        {% elif notification.priority == 'HIGH' %}bg-orange-100
+                        {% elif notification.priority == 'MEDIUM' %}bg-yellow-100
+                        {% else %}{% endif %}"
+                        {% if notification.priority != 'CRITICAL' and notification.priority != 'HIGH' and notification.priority != 'MEDIUM' %}style="background-color: rgba(var(--primary-color-rgb, 59, 130, 246), 0.1);"{% endif %}>
+                        
+                        <i data-lucide="{% if notification.notification_type == 'REQUEST_CREATED' %}plus-circle{% elif notification.notification_type == 'REQUEST_APPROVED' %}check-circle{% elif notification.notification_type == 'REQUEST_REJECTED' %}x-circle{% elif notification.notification_type == 'REQUEST_COMPLETED' %}check-circle-2{% elif notification.notification_type == 'EQUIPMENT_ASSIGNED' %}user-check{% elif notification.notification_type == 'MAINTENANCE_DUE' %}wrench{% elif notification.notification_type == 'WARRANTY_EXPIRING' %}alert-triangle{% else %}bell{% endif %}" 
+                           class="w-6 h-6 
+                        {% if notification.priority == 'CRITICAL' %}text-red-600
+                        {% elif notification.priority == 'HIGH' %}text-orange-600
+                        {% elif notification.priority == 'MEDIUM' %}text-yellow-600
+                        {% else %}text-custom-primary{% endif %}"
+                        {% if notification.priority != 'CRITICAL' and notification.priority != 'HIGH' and notification.priority != 'MEDIUM' %}style="color: var(--primary-color);"{% endif %}></i>
+                    </div>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-1">{{ notification.title }}</h3>
+                            <p class="text-gray-600 mb-3">{{ notification.message }}</p>
+
+                            {% if notification.related_request %}
+                            <a href="{% url 'requests:detail' notification.related_request.id %}" class="inline-flex items-center gap-2 text-sm font-medium hover:opacity-80" style="color: var(--primary-color);">
+                                <i data-lucide="external-link" class="w-4 h-4"></i>
+                                View Request #{{ notification.related_request.request_id }}
+                            </a>
+                            {% endif %}
+
+                            {% if notification.related_equipment %}
+                            <a href="{% url 'equipment:equipment_detail' notification.related_equipment.id %}" class="inline-flex items-center gap-2 text-sm font-medium hover:opacity-80 ml-4" style="color: var(--primary-color);">
+                                <i data-lucide="external-link" class="w-4 h-4"></i>
+                                View Equipment
+                            </a>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex items-center gap-2 ml-4">
+                            {% if not notification.is_read %}
+                            <button onclick="markAsRead('{{ notification.id }}')" class="p-2 rounded-lg transition-colors" style="color: var(--primary-color); hover:background-color: rgba(var(--primary-color-rgb, 59, 130, 246), 0.1);" title="Mark as read">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                            </button>
+                            {% endif %}
+                            <button onclick="archiveNotification('{{ notification.id }}')" class="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-50 transition-colors" title="Archive">
+                                <i data-lucide="archive" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                        <span>{{ notification.created_at|date:"M d, Y H:i" }}</span>
+                        <span class="px-2 py-1 rounded text-xs font-medium
+                            {% if notification.priority == 'CRITICAL' %}bg-red-100 text-red-800
+                            {% elif notification.priority == 'HIGH' %}bg-orange-100 text-orange-800
+                            {% elif notification.priority == 'MEDIUM' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ notification.get_priority_display }}
+                        </span>
+                        {% if notification.is_overdue %}
+                        <span class="text-red-600 font-medium">Overdue</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="bg-white p-12 rounded-2xl text-center border border-slate-100">
+            <i data-lucide="bell-off" class="w-16 h-16 mx-auto mb-4 text-gray-400"></i>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">No notifications</h3>
+            <p class="text-gray-500">You're all caught up! New notifications will appear here.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+    <div class="mt-8 flex justify-center">
+        <nav class="flex items-center gap-2">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 rounded-lg border border-gray-200 transition-colors" style="hover:color: var(--primary-color);">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </a>
+            {% endif %}
+
+            <span class="px-4 py-2 text-sm text-gray-600">
+                Page {{ page_obj.number }} of {{ paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 rounded-lg border border-gray-200 transition-colors" style="hover:color: var(--primary-color);">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Mark single notification as read
+function markAsRead(notificationId) {
+    fetch(`/notifications/mark-read/${notificationId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            showToast('Error marking notification as read', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred', 'error');
+    });
+}
+
+// Mark all notifications as read
+function markAllAsRead() {
+    fetch('{% url "notifications:mark_all_read" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            showToast('Error marking all as read', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred', 'error');
+    });
+}
+
+// Archive notification
+function archiveNotification(notificationId) {
+    fetch(`/notifications/archive/${notificationId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            showToast('Error archiving notification', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred', 'error');
+    });
+}
+
+// Toast notification function (matching base.html style)
+function showToast(message, type = 'success') {
+    const toastContainer = document.body;
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-5 right-5 z-[60] glass px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border-l-4 animate-bounce-in notification-toast ${
+        type === 'success' ? 'border-green-500' : 'border-red-500'
+    }`;
+    toast.innerHTML = `
+        <div class="${type === 'success' ? 'text-green-500' : 'text-red-500'}">
+            <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-6 h-6"></i>
+        </div>
+        <div class="flex flex-col">
+            <span class="text-xs font-black uppercase tracking-wider" style="color: var(--primary-color)">
+                ${type === 'success' ? 'Success' : 'Error'}
+            </span>
+            <span class="font-medium text-gray-800">${message}</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="ml-auto text-gray-400 hover:text-gray-600">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    `;
+    toastContainer.appendChild(toast);
+    
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+    
+    setTimeout(() => {
+        if (toast && toast.parentElement) {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 4000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+});
+</script>
+{% endblock %}

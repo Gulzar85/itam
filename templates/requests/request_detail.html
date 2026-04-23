@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6 max-w-6xl">
+    <!-- Header -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+        <div class="flex items-center gap-4">
+            <button onclick="history.back()" class="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:shadow-md transition-all">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </button>
+            <div>
+                <h1 class="text-xl lg:text-2xl font-bold text-slate-800">
+                    Request <span class="text-blue-600">#{{ req.request_id }}</span>
+                </h1>
+                <p class="text-sm text-slate-500">{{ req.get_request_type_display }} • {{ req.created_at|date:"M d, Y" }}</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold
+                {% if req.status == 'COMPLETED' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                {% elif req.status == 'REJECTED' %}bg-rose-50 text-rose-700 border border-rose-200
+                {% elif req.status == 'IN_PROGRESS' %}bg-amber-50 text-amber-700 border border-amber-200
+                {% else %}bg-slate-50 text-slate-600 border border-slate-200{% endif %}">
+                {% if req.status == 'COMPLETED' %}
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                {% elif req.status == 'REJECTED' %}
+                    <i data-lucide="x-circle" class="w-4 h-4"></i>
+                {% elif req.status == 'IN_PROGRESS' %}
+                    <i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
+                {% else %}
+                    <i data-lucide="clock" class="w-4 h-4"></i>
+                {% endif %}
+                {{ req.get_status_display }}
+            </span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Main Content -->
+        <div class="lg:col-span-8 space-y-6">
+            <!-- Request Details Card -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: var(--primary-color);">
+                        <i data-lucide="file-text" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <h2 class="text-lg font-bold text-slate-800">Request Details</h2>
+                </div>
+
+                <div class="p-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase mb-1">Requested By</p>
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-sm" style="background-color: var(--primary-color);">
+                                    {{ req.user.username|first|upper }}
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-slate-800">{{ req.user.get_full_name|default:req.user.username }}</p>
+                                    <p class="text-xs text-slate-500">{{ req.user.department.name|default:"" }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase mb-1">Priority</p>
+                            <span class="inline-flex px-3 py-1.5 rounded-lg text-xs font-semibold
+                                {% if req.priority == 'CRITICAL' %}bg-rose-100 text-rose-700
+                                {% elif req.priority == 'HIGH' %}bg-orange-100 text-orange-700
+                                {% elif req.priority == 'MEDIUM' %}bg-amber-100 text-amber-700
+                                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                {{ req.get_priority_display }}
+                            </span>
+                        </div>
+
+                        {% if req.equipment %}
+                        <div class="md:col-span-2">
+                            <p class="text-xs font-medium text-slate-400 uppercase mb-1">Related Asset</p>
+                            <div class="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                                <i data-lucide="monitor" class="w-5 h-5 text-slate-400"></i>
+                                <div>
+                                    <p class="font-semibold text-slate-700">{{ req.equipment.category.name }} — {{ req.equipment.brand.name }} {{ req.equipment.model_number }}</p>
+                                    <p class="text-xs text-slate-400">S/N: {{ req.equipment.serial_number }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if req.category_needed %}
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase mb-1">Category</p>
+                            <p class="font-semibold text-slate-700">{{ req.category_needed.name }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if req.brand_preference %}
+                        <div>
+                            <p class="text-xs font-medium text-slate-400 uppercase mb-1">Brand Preference</p>
+                            <p class="font-semibold text-slate-700">{{ req.brand_preference.name }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mt-5">
+                        <p class="text-xs font-medium text-slate-400 uppercase mb-2">Reason</p>
+                        <div class="p-4 rounded-xl bg-slate-50 text-slate-600 font-medium">
+                            {{ req.reason }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IT Admin Actions -->
+            {% if user.role == 'IT_ADMIN' %}
+                <!-- Assign Asset for NEW requests -->
+                {% if req.status == 'MANAGER_APPROVED' and req.request_type != 'REPAIR' %}
+                <div class="bg-white rounded-2xl border-2 shadow-lg p-6" style="border-color: var(--primary-color);">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--primary-color);">
+                            <i data-lucide="package-plus" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-800">Assign Asset</h3>
+                    </div>
+                    <form id="assignForm" class="space-y-4">
+                        {% csrf_token %}
+                        <div>
+                            <label class="text-xs font-medium text-slate-500 uppercase mb-2 block">Select Available Asset</label>
+                            <select name="equipment_id" id="equipment_id" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-medium text-slate-700 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">-- Select from Inventory --</option>
+                                {% for item in available_assets %}
+                                    <option value="{{ item.id }}">{{ item.category.name }} | {{ item.brand.name }} {{ item.model_number }} ({{ item.serial_number }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-medium text-slate-500 uppercase mb-2 block">Remarks</label>
+                            <textarea name="remarks" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-medium text-slate-700 bg-white h-20 resize-none" placeholder="Handed over with charger and bag..."></textarea>
+                        </div>
+                        <button type="button" onclick="submitAssignment()" class="w-full text-white py-3.5 rounded-xl font-semibold transition-all hover:opacity-90 hover:shadow-lg" style="background-color: var(--primary-color);">
+                            Complete Assignment
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <!-- Send to Repair -->
+                {% if req.status == 'MANAGER_APPROVED' and req.request_type == 'REPAIR' %}
+                <div class="bg-white rounded-2xl border-2 border-amber-200 shadow-lg p-6">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-500">
+                            <i data-lucide="wrench" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-800">Dispatch for Repair</h3>
+                    </div>
+                    <form id="maintenanceForm" class="space-y-4">
+                        {% csrf_token %}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs font-medium text-slate-500 uppercase mb-2 block">Service Provider</label>
+                                <select name="vendor_id" id="vendor_id" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-medium bg-white">
+                                    <option value="">-- Choose Vendor --</option>
+                                    {% for vendor in vendors %}
+                                        <option value="{{ vendor.id }}">{{ vendor.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-slate-500 uppercase mb-2 block">Estimated Cost (PKR)</label>
+                                <input type="number" name="estimated_cost" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-medium bg-white" placeholder="0">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="text-xs font-medium text-slate-500 uppercase mb-2 block">Expected Return</label>
+                                <input type="date" name="expected_return_date" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-medium bg-white">
+                            </div>
+                        </div>
+                        <button type="button" onclick="submitMaintenance()" class="w-full bg-amber-500 text-white py-3.5 rounded-xl font-semibold transition-all hover:bg-amber-600">
+                            Send to Vendor
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <!-- Complete Repair -->
+                {% if req.status == 'IN_PROGRESS' and req.request_type == 'REPAIR' %}
+                <div class="bg-white rounded-2xl border-2 border-emerald-200 shadow-lg p-6">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-500">
+                            <i data-lucide="check-circle" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-800">Complete Repair</h3>
+                    </div>
+                    <form id="receiveForm" class="space-y-4">
+                        {% csrf_token %}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs font-medium text-slate-500 uppercase mb-2 block">Final Bill (PKR)</label>
+                                <input type="number" name="actual_cost" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-medium bg-white" required>
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-slate-500 uppercase mb-2 block">Date Received</label>
+                                <input type="date" name="actual_return_date" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-medium bg-white" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs font-medium text-slate-500 uppercase mb-2 block">Repair Notes</label>
+                            <textarea name="repair_notes" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-medium bg-white h-20 resize-none" placeholder="What was fixed?"></textarea>
+                        </div>
+                        <button type="button" onclick="completeRepair()" class="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-semibold transition-all hover:bg-emerald-600">
+                            Complete & Handover
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="lg:col-span-4 space-y-6">
+            <!-- Process Timeline -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+                <h3 class="text-base font-bold text-slate-800 mb-5 flex items-center gap-2">
+                    <i data-lucide="git-branch" class="w-5 h-5" style="color: var(--primary-color);"></i>
+                    Activity Timeline
+                </h3>
+                {% include 'includes/timeline.html' with items=logs %}
+            </div>
+
+            <!-- Manager Actions -->
+            {% if req.status == 'PENDING' and user.role == 'MANAGER' %}
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+                <h3 class="text-base font-bold text-slate-800 mb-4">Manager Actions</h3>
+                <div class="space-y-3">
+                    <button data-url="{% url 'requests:update_action' req.id %}"
+                            onclick="handleAction(this, 'MANAGER_APPROVED')"
+                            class="w-full flex items-center justify-center gap-2 text-white py-3 rounded-xl font-semibold bg-emerald-500 hover:bg-emerald-600 transition-all">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        Approve
+                    </button>
+                    <button data-url="{% url 'requests:update_action' req.id %}"
+                            onclick="handleAction(this, 'REJECTED')"
+                            class="w-full flex items-center justify-center gap-2 text-rose-600 border border-rose-200 py-3 rounded-xl font-semibold hover:bg-rose-50 transition-all">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                        Reject
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="flex flex-col items-center gap-3">
+        <div class="w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
+        <p class="text-sm font-medium text-slate-600">Processing...</p>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg transform transition-all translate-x-0 ${type === 'success' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`;
+    toast.innerHTML = `
+        <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-5 h-5"></i>
+        <span class="font-medium">${message}</span>
+    `;
+    container.appendChild(toast);
+    if (window.lucide) { lucide.createIcons(); }
+    setTimeout(() => toast.remove(), 4000);
+}
+
+// Handle Manager Actions
+function handleAction(btn, newStatus) {
+    const actionUrl = btn.getAttribute('data-url');
+    openRemarksPrompt((remarks) => {
+        showLoading();
+        $.ajax({
+            url: actionUrl,
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                'status': newStatus,
+                'remarks': remarks || `Action performed via Detail View`
+            },
+            success: (res) => {
+                hideLoading();
+                showToast('Request updated successfully');
+                setTimeout(() => location.reload(), 1000);
+            },
+            error: (err) => {
+                hideLoading();
+                showToast(err.responseJSON?.message || 'Something went wrong', 'error');
+            }
+        });
+    });
+}
+
+// Assign Asset
+function submitAssignment() {
+    const assetId = $('#equipment_id').val();
+    if (!assetId) {
+        showToast('Please select an asset', 'error');
+        return;
+    }
+
+    if (confirm('Confirm assignment? This will complete the request.')) {
+        showLoading();
+        $.ajax({
+            url: "{% url 'requests:assign_equipment' req.id %}",
+            type: "POST",
+            data: $('#assignForm').serialize(),
+            success: (res) => {
+                hideLoading();
+                showToast('Asset assigned successfully');
+                setTimeout(() => location.reload(), 1000);
+            },
+            error: (err) => {
+                hideLoading();
+                showToast(err.responseJSON?.message || 'Failed to assign asset', 'error');
+            }
+        });
+    }
+}
+
+// Send to Maintenance
+function submitMaintenance() {
+    if (!$('#vendor_id').val()) {
+        showToast('Please select a vendor', 'error');
+        return;
+    }
+
+    if (confirm('Send asset for repair?')) {
+        showLoading();
+        $.ajax({
+            url: "{% url 'requests:process_maintenance' req.id %}",
+            type: "POST",
+            data: $('#maintenanceForm').serialize(),
+            success: (res) => {
+                hideLoading();
+                showToast('Sent to vendor for repair');
+                setTimeout(() => location.reload(), 1000);
+            },
+            error: (err) => {
+                hideLoading();
+                showToast(err.responseJSON?.message || 'Failed to process', 'error');
+            }
+        });
+    }
+}
+
+// Complete Repair
+function completeRepair() {
+    if (!$('input[name="actual_cost"]').val()) {
+        showToast('Please enter the final cost', 'error');
+        return;
+    }
+
+    if (confirm('Complete repair and return to employee?')) {
+        showLoading();
+        $.ajax({
+            url: "{% url 'requests:complete_maintenance' req.id %}",
+            type: "POST",
+            data: $('#receiveForm').serialize(),
+            success: (res) => {
+                hideLoading();
+                showToast('Repair completed');
+                setTimeout(() => location.reload(), 1000);
+            },
+            error: (err) => {
+                hideLoading();
+                showToast(err.responseJSON?.message || 'Failed to complete', 'error');
+            }
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.lucide) { lucide.createIcons(); }
+});
+</script>
+{% endblock %}

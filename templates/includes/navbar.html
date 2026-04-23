@@ -1,0 +1,136 @@
+<!-- Top Navigation Bar -->
+<header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <!-- Left side - Breadcrumb/Title -->
+    <div class="flex items-center gap-4">
+
+        <!-- Page title (dynamic from context processor) -->
+        <div>
+            <h1 class="text-xl font-semibold text-slate-800">
+                {% block page_title %}{{ page_title|default:"Dashboard" }}{% endblock %}
+            </h1>
+            <p class="text-sm text-slate-500">
+                {% block page_subtitle %}{{ page_subtitle|default:"Welcome back" }}{% endblock %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Right side - Search and User menu -->
+    <div class="flex items-center gap-4">
+        <!-- Global Search -->
+        {% include 'includes/search.html' %}
+
+        <!-- Notifications with dynamic badge -->
+        <button class="relative text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <!-- Dynamic notification badge from context processor -->
+            {% if unread_count > 0 %}
+            <span class="absolute -top-1 -right-1 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse"
+                  style="background-color: var(--primary-color)">
+                {{ unread_count }}
+            </span>
+            {% endif %}
+        </button>
+
+        <!-- User Menu Dropdown -->
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open"
+                    class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <!-- User Avatar -->
+                <div class="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm"
+                     style="background-color: var(--primary-color); color: white;">
+                    {{ user.username|slice:":2"|upper }}
+                </div>
+
+                <!-- User Info -->
+                <div class="hidden md:block text-left">
+                    <div class="text-sm font-medium text-gray-900">
+                        {{ user.get_full_name|default:user.username }}
+                    </div>
+                    <div class="text-xs text-gray-500 capitalize">
+                        {{ user.get_role_display|default:'Employee' }}
+                    </div>
+                </div>
+
+                <!-- Dropdown arrow -->
+                <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform" :class="open ? 'rotate-180' : ''"></i>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div x-show="open"
+                 @click.away="open = false"
+                 x-transition
+                 class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+
+                <!-- User Info Header -->
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <div class="text-sm font-medium text-gray-900">
+                        {{ user.get_full_name|default:user.username }}
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        {{ user.email }}
+                    </div>
+                    <div class="text-xs font-medium mt-1 capitalize"
+                         style="color: var(--primary-color)">
+                        {{ user.get_role_display|default:'Employee' }}
+                    </div>
+                </div>
+
+                <!-- Menu Items -->
+                <div class="py-1">
+                    <a href="{% url 'accounts:profile' %}"
+                       class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        Profile Settings
+                    </a>
+
+                    <a href="{% url 'notifications:list' %}"
+                       class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                        <i data-lucide="bell" class="w-4 h-4"></i>
+                        Notifications
+                        {% if unread_count > 0 %}
+                        <span class="ml-auto text-xs px-2 py-0.5 rounded-full text-white"
+                              style="background-color: var(--primary-color)">
+                            {{ unread_count }}
+                        </span>
+                        {% endif %}
+                    </a>
+
+                    <a href="{% url 'equipment:equipment_list' %}"
+                       class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                        <i data-lucide="package" class="w-4 h-4"></i>
+                        Equipment
+                    </a>
+
+                    <a href="{% url 'accounts:profile' %}"
+                       class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                        <i data-lucide="settings" class="w-4 h-4"></i>
+                        Preferences
+                    </a>
+
+                    {% if user.role == 'IT_ADMIN' %}
+                    <a href="/admin/"
+                       class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                        <i data-lucide="shield" class="w-4 h-4"></i>
+                        Admin Panel
+                    </a>
+                    {% endif %}
+                </div>
+
+                <!-- Divider -->
+                <div class="border-t border-gray-200 my-1"></div>
+
+                <!-- Logout -->
+                <div class="py-1">
+                    <form method="post" action="{% url 'accounts:logout' %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full text-left">
+                            <i data-lucide="log-out" class="w-4 h-4"></i>
+                            Sign Out
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>

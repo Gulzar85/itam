@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Equipment Categories</h1>
+                <p class="text-gray-600">Manage equipment categories and classifications</p>
+            </div>
+            <a href="{% url 'equipment:category_create' %}" class="text-white px-6 py-3 rounded-xl hover:opacity-90 transition-colors font-medium" style="background-color: var(--primary-color);">
+                <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>
+                Add Category
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-4">
+        <div class="flex flex-col md:flex-row gap-4">
+            <div class="flex-1">
+                <div class="relative">
+                    <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="searchInput" placeholder="Search categories..." class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl outline-none transition-all bg-white/50" style="focus:ring-2; focus:ring-color: var(--primary-color);">
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <select id="sortSelect" class="px-4 py-3 border border-gray-200 rounded-xl outline-none transition-all bg-white/50" style="focus:ring-2; focus:ring-color: var(--primary-color);">
+                    <option value="name">Sort by Name</option>
+                    <option value="created">Sort by Date Added</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="categoriesGrid">
+        {% for category in object_list %}
+        <div class="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md border border-slate-100 transition-shadow">
+            <div class="flex items-start justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-md">
+                        <i data-lucide="{{ category.icon|default:'folder' }}" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-800">{{ category.name }}</h3>
+                        {% if category.description %}
+                        <p class="text-gray-500 text-sm mt-1">{{ category.description|truncatechars:60 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex gap-1">
+                    <a href="{% url 'equipment:category_detail' category.pk %}" class="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 hover:text-blue-600 transition-colors">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                    </a>
+                    <a href="{% url 'equipment:category_update' category.pk %}" class="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-500 hover:text-emerald-600 transition-colors">
+                        <i data-lucide="edit-2" class="w-4 h-4"></i>
+                    </a>
+                    <a href="{% url 'equipment:category_delete' category.pk %}" class="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-600 transition-colors">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+                <span class="flex items-center gap-1">
+                    <i data-lucide="package" class="w-4 h-4"></i>
+                    {{ category.equipments.count }} items
+                </span>
+                <span>{{ category.created_at|date:"M d, Y"|default:"Recently added" }}</span>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
+            <i data-lucide="folder-open" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">No categories found</h3>
+            <p class="text-gray-500 mb-6">Get started by adding your first equipment category.</p>
+            <a href="{% url 'equipment:category_create' %}" class="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl hover:opacity-90 transition-colors font-medium" style="background-color: var(--primary-color);">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                Add First Category
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+    <div class="mt-8 flex justify-center">
+        <nav class="flex items-center gap-2">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 border border-gray-200 rounded-xl transition-colors text-gray-700 hover:border-blue-500 hover:text-blue-600">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </a>
+            {% endif %}
+
+            <span class="px-4 py-2 text-gray-600">
+                Page {{ page_obj.number }} of {{ paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 border border-gray-200 rounded-xl transition-colors text-gray-700 hover:border-blue-500 hover:text-blue-600">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    input:focus, select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px var(--primary-color-alpha);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+});
+
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const categoryCards = document.querySelectorAll('#categoriesGrid > div:not(.col-span-full)');
+    categoryCards.forEach(card => {
+        const categoryName = card.querySelector('h3').textContent.toLowerCase();
+        const categoryDesc = card.querySelector('p') ? card.querySelector('p').textContent.toLowerCase() : '';
+        card.style.display = (categoryName.includes(searchTerm) || categoryDesc.includes(searchTerm)) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}
