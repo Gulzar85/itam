@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables@1.13.8/dist/css/dataTables.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-4" x-data="reportApp()" x-cloak>
+    
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-black text-gray-800 flex items-center gap-3">
+                <span class="p-2 bg-custom-primary rounded-2xl shadow-lg">
+                    <i data-lucide="clipboard-list" class="w-7 h-7 text-white"></i>
+                </span>
+                Request Summary Report
+            </h1>
+            <p class="text-gray-500 mt-2 ml-14 font-medium">Complete request overview with timeline</p>
+        </div>
+        <div class="flex gap-2">
+            <button @click="exportCSV()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50">
+                <i data-lucide="download" class="w-4 h-4 text-custom-primary"></i> Export
+            </button>
+        </div>
+    </div>
+
+    <form method="GET" class="glass-card rounded-3xl p-6 mb-8 border border-gray-200">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Start Date</label>
+                <input type="date" name="start_date" value="{{ filter_start_date }}" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">End Date</label>
+                <input type="date" name="end_date" value="{{ filter_end_date }}" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Priority</label>
+                <select name="priority" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium">
+                    <option value="">All</option>
+                    <option value="LOW" {% if filter_priority == 'LOW' %}selected{% endif %}>Low</option>
+                    <option value="MEDIUM" {% if filter_priority == 'MEDIUM' %}selected{% endif %}>Medium</option>
+                    <option value="HIGH" {% if filter_priority == 'HIGH' %}selected{% endif %}>High</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Status</label>
+                <select name="status" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium">
+                    <option value="">All</option>
+                    <option value="PENDING" {% if filter_status == 'PENDING' %}selected{% endif %}>Pending</option>
+                    <option value="MANAGER_APPROVED" {% if filter_status == 'MANAGER_APPROVED' %}selected{% endif %}>Manager Approved</option>
+                    <option value="IT_APPROVED" {% if filter_status == 'IT_APPROVED' %}selected{% endif %}>IT Approved</option>
+                    <option value="COMPLETED" {% if filter_status == 'COMPLETED' %}selected{% endif %}>Completed</option>
+                    <option value="REJECTED" {% if filter_status == 'REJECTED' %}selected{% endif %}>Rejected</option>
+                </select>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 px-5 py-2.5 bg-custom-primary text-white rounded-xl text-sm font-bold">Apply</button>
+                <a href="{% url 'equipment:request_summary_report' %}" class="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div class="glass-card rounded-2xl p-4 text-center">
+            <p class="text-2xl font-black text-gray-800">{{ total_requests }}</p>
+            <p class="text-xs font-bold text-gray-400 uppercase">Total</p>
+        </div>
+        <div class="glass-card rounded-2xl p-4 text-center">
+            <p class="text-2xl font-black text-amber-600">{{ pending_requests }}</p>
+            <p class="text-xs font-bold text-gray-400 uppercase">Pending</p>
+        </div>
+        <div class="glass-card rounded-2xl p-4 text-center">
+            <p class="text-2xl font-black text-blue-600">{{ approved_requests }}</p>
+            <p class="text-xs font-bold text-gray-400 uppercase">Approved</p>
+        </div>
+        <div class="glass-card rounded-2xl p-4 text-center">
+            <p class="text-2xl font-black text-emerald-600">{{ completed_requests }}</p>
+            <p class="text-xs font-bold text-gray-400 uppercase">Completed</p>
+        </div>
+        <div class="glass-card rounded-2xl p-4 text-center bg-red-100">
+            <p class="text-2xl font-black text-red-600">{{ rejected_requests }}</p>
+            <p class="text-xs font-bold text-gray-400 uppercase">Rejected</p>
+        </div>
+    </div>
+
+    <div class="glass-card p-8 rounded-[2rem]">
+        <div class="overflow-x-auto">
+            <table id="dataTable" class="display w-full text-sm">
+                <thead>
+                    <tr class="border-b-2 border-gray-300 bg-gray-50">
+                        <th class="text-left py-3 px-2 font-black text-gray-700 uppercase text-xs">ID</th>
+                        <th class="text-left py-3 px-2 font-black text-gray-700 uppercase text-xs">Type</th>
+                        <th class="text-left py-3 px-2 font-black text-gray-700 uppercase text-xs">User</th>
+                        <th class="text-left py-3 px-2 font-black text-gray-700 uppercase text-xs">Department</th>
+                        <th class="text-center py-3 px-2 font-black text-gray-700 uppercase text-xs">Priority</th>
+                        <th class="text-center py-3 px-2 font-black text-gray-700 uppercase text-xs">Status</th>
+                        <th class="text-center py-3 px-2 font-black text-gray-700 uppercase text-xs">Created</th>
+                        <th class="text-center py-3 px-2 font-black text-gray-700 uppercase text-xs">Days Open</th>
+                        <th class="text-left py-3 px-2 font-black text-gray-700 uppercase text-xs">Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in requests %}
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-3 px-2 font-semibold text-custom-primary whitespace-nowrap">{{ r.tracking_id }}</td>
+                        <td class="py-3 px-2">{{ r.request_type }}</td>
+                        <td class="py-3 px-2">{{ r.user }}</td>
+                        <td class="py-3 px-2">{{ r.department }}</td>
+                        <td class="py-3 px-2 text-center">
+                            <span class="px-2 py-1 rounded-full text-xs font-bold {% if r.priority == 'HIGH' %}bg-red-100 text-red-700{% elif r.priority == 'MEDIUM' %}bg-amber-100 text-amber-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                                {{ r.priority }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-2 text-center">
+                            <span class="px-2 py-1 rounded-full text-xs font-bold {% if r.status == 'COMPLETED' %}bg-emerald-100 text-emerald-700{% elif r.status == 'REJECTED' %}bg-red-100 text-red-700{% elif r.status == 'PENDING' %}bg-amber-100 text-amber-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                                {{ r.status }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-2 text-center whitespace-nowrap">{{ r.created_at|date:"d M Y" }}</td>
+                        <td class="py-3 px-2 text-center">
+                            <span class="px-2 py-1 rounded-full text-xs font-bold {% if r.days_open > 30 %}bg-red-100 text-red-700{% elif r.days_open > 7 %}bg-amber-100 text-amber-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                                {{ r.days_open }} days
+                            </span>
+                        </td>
+                        <td class="py-3 px-2 text-xs">{{ r.reason }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="9" class="py-8 text-center text-gray-500">No requests found</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/datatables@1.13.8/dist/js/dataTables.min.js"></script>
+<script>
+function reportApp() {
+    return {
+        dt: null,
+        init() {
+            initLucide();
+            this.$nextTick(() => {
+                const table = document.querySelector('#dataTable');
+                if (table && typeof $.fn.DataTable === 'function') {
+                    this.dt = $(table).DataTable({ pageLength: 25, order: [[6, 'desc']] });
+                }
+            });
+        },
+        exportCSV() {
+            if (!this.dt) return;
+            let csv = [['ID', 'Type', 'User', 'Department', 'Priority', 'Status', 'Created', 'Days Open', 'Reason']];
+            this.dt.rows().data().each(row => csv.push(row.map(c => '"' + String(c).replace(/"/g, '""') + '"')));
+            const blob = new Blob([csv.map(r => r.join(',')).join('\n')], { type: 'text/csv' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'request_summary_' + new Date().toISOString().split('T')[0] + '.csv';
+            link.click();
+        }
+    }
+}
+</script>
+{% endblock %}

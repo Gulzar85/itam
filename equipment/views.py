@@ -610,3 +610,421 @@ class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
             'filtered_equipment': enriched_equipment,
         })
         return context
+
+
+class MaintenanceHistoryReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'reports/maintenance_history.html'
+
+    def test_func(self):
+        return hasattr(self.request.user, 'role') and self.request.user.role == 'IT_ADMIN'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        request = self.request
+
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        vendor_id = request.GET.get('vendor')
+        status_filter = request.GET.get('status')
+
+        from equipment.models import MaintenanceRecord
+        from requests.models import Request
+
+        maint_query = MaintenanceRecord.objects.select_related(
+            'equipment', 'equipment__brand', 'vendor', 'request', 'request__user'
+        )
+
+        if start_date:
+            try:
+                start = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
+                maint_query = maint_query.filter(sent_date__gte=start)
+            except (ValueError, TypeError):
+                pass
+
+        if end_date:
+            try:
+                end = make_aware(datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+                maint_query = maint_query.filter(sent_date__lte=end)
+            except (ValueError, TypeError):
+                pass
+
+        if vendor_id:
+            maint_query = maint_query.filter(vendor_id=vendor_id)
+
+        if status_filter:
+            maint_query = maint_query.filter(status=status_filter)
+
+        records = []
+        for m in maint_query[:200]:
+            repair_duration = None
+            if m.sent_date and m.actual_return_date:
+                repair_duration = (m.actual_return_date - m.sent_date).days
+            elif m.sent_date and m.expected_return_date:
+                repair_duration = (m.expected_return_date - m.sent_date).days
+
+            cost_diff = float(m.actual_cost or 0) - float(m.estimated_cost or 0) if m.actual_cost else None
+
+            records.append({
+                'equipment': f"{m.equipment.brand.name} {m.equipment.model_number}",
+                'tracking_id': m.equipment.tracking_id,
+                'serial_number': m.equipment.serial_number,
+                'vendor': m.vendor.name if m.vendor else 'Internal',
+                'issue': m.issue_description[:100],
+                'sent_date': m.sent_date,
+                'expected_return': m.expected_return_date,
+                'actual_return': m.actual_return_date,
+                'repair_duration': repair_duration,
+                'estimated_cost': float(m.estimated_cost or 0),
+                'actual_cost': float(m.actual_cost or 0) if m.actual_cost else None,
+                'cost_diff': cost_diff,
+                'status': m.status,
+                'request_by': m.request.user.get_full_name() if m.request and m.request.user else '-',
+            })
+
+        total_estimated = sum(r['estimated_cost'] for r in records)
+        total_actual = sum(r['actual_cost'] for r in records if r['actual_cost'])
+        total_records = maint_query.count()
+        completed_records = maint_query.filter(status='COMPLETED').count()
+        avg_duration = sum(r['repair_duration'] for r in records if r['repair_duration']) / len([r for r in records if r['repair_duration']]) if records else 0
+
+        context.update({
+            'records': records,
+            'vendors': Vendor.objects.all(),
+            'total_records': total_records,
+            'completed_records': completed_records,
+            'total_estimated': total_estimated,
+            'total_actual': total_actual,
+            'avg_duration': round(avg_duration, 1) if avg_duration else 0,
+            'filter_start_date': start_date or '',
+            'filter_end_date': end_date or '',
+            'filter_vendor': vendor_id or '',
+            'filter_status': status_filter or '',
+        })
+        return context
+
+
+class RequestSummaryReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'reports/request_summary.html'
+
+    def test_func(self):
+        return hasattr(self.request.user, 'role') and self.request.user.role == 'IT_ADMIN'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        request = self.request
+
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        priority = request.GET.get('priority')
+        req_status = request.GET.get('status')
+
+        from requests.models import Request
+
+        req_query = Request.objects.select_related('user', 'user__department').prefetch_related('logs')
+
+        if start_date:
+            try:
+                start = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
+                req_query = req_query.filter(created_at__gte=start)
+            except (ValueError, TypeError):
+                pass
+
+        if end_date:
+            try:
+                end = make_aware(datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+                req_query = req_query.filter(created_at__lte=end)
+            except (ValueError, TypeError):
+                pass
+
+        if priority:
+            req_query = req_query.filter(priority=priority)
+
+        if req_status:
+            req_query = req_query.filter(status=req_status)
+
+        from django.utils.timezone import now as utc_now
+        today = utc_now().date()
+
+        requests_data = []
+        for r in req_query[:200]:
+            days_open = (today - r.created_at.date()).days if r.created_at else 0
+
+            logs = r.logs.all().order_by('timestamp') if hasattr(r, 'logs') else []
+            timeline = []
+            for log in logs[:10]:
+                timeline.append({
+                    'action': log.action,
+                    'timestamp': log.timestamp,
+                    'by': log.done_by.get_full_name() if log.done_by else 'System',
+                })
+
+            requests_data.append({
+                'id': r.id,
+                'tracking_id': f"REQ-{r.created_at.year}-{str(r.id)[:8].upper()}",
+                'request_type': r.get_request_type_display() if hasattr(r, 'get_request_type_display') else r.request_type,
+                'priority': r.priority,
+                'priority_display': r.get_priority_display() if hasattr(r, 'get_priority_display') else r.priority,
+                'status': r.status,
+                'status_display': r.get_status_display(),
+                'user': r.user.get_full_name() or r.user.username,
+                'department': r.user.department.name if r.user.department else '-',
+                'created_at': r.created_at,
+                'days_open': days_open,
+                'reason': r.reason[:100] if r.reason else '',
+                'timeline': timeline,
+            })
+
+        context.update({
+            'requests': requests_data,
+            'total_requests': req_query.count(),
+            'pending_requests': req_query.filter(status='PENDING').count(),
+            'approved_requests': req_query.filter(status__in=['MANAGER_APPROVED', 'IT_APPROVED']).count(),
+            'completed_requests': req_query.filter(status='COMPLETED').count(),
+            'rejected_requests': req_query.filter(status='REJECTED').count(),
+            'filter_start_date': start_date or '',
+            'filter_end_date': end_date or '',
+            'filter_priority': priority or '',
+            'filter_status': req_status or '',
+            'priority_choices': Request._meta.get_field('priority').choices if hasattr(Request, '_meta') else [],
+            'status_choices': Request._meta.get_field('status').choices if hasattr(Request, '_meta') else [],
+        })
+        return context
+
+
+class VendorPerformanceReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'reports/vendor_performance.html'
+
+    def test_func(self):
+        return hasattr(self.request.user, 'role') and self.request.user.role == 'IT_ADMIN'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        request = self.request
+
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        from equipment.models import MaintenanceRecord
+
+        maint_query = MaintenanceRecord.objects.filter(vendor__isnull=False).select_related('vendor', 'equipment')
+
+        if start_date:
+            try:
+                start = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
+                maint_query = maint_query.filter(sent_date__gte=start)
+            except (ValueError, TypeError):
+                pass
+
+        if end_date:
+            try:
+                end = make_aware(datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+                maint_query = maint_query.filter(sent_date__lte=end)
+            except (ValueError, TypeError):
+                pass
+
+        vendor_stats = []
+        for vendor in Vendor.objects.all():
+            v_records = maint_query.filter(vendor=vendor)
+            total = v_records.count()
+            if total == 0:
+                continue
+
+            completed = v_records.filter(status='COMPLETED').count()
+            in_progress = v_records.filter(status='IN_PROGRESS').count()
+
+            estimated = sum(float(r.estimated_cost or 0) for r in v_records)
+            actual = sum(float(r.actual_cost or 0) for r in v_records if r.actual_cost)
+
+            avg_cost_diff = ((actual - estimated) / estimated * 100) if estimated > 0 else 0
+
+            durations = []
+            for r in v_records.filter(status='COMPLETED', actual_return_date__isnull=False, sent_date__isnull=False):
+                dur = (r.actual_return_date - r.sent_date).days
+                if dur > 0:
+                    durations.append(dur)
+
+            avg_duration = sum(durations) / len(durations) if durations else 0
+            on_time = sum(1 for r in v_records.filter(status='COMPLETED') if r.actual_return_date and r.expected_return_date and r.actual_return_date <= r.expected_return_date)
+            on_time_rate = (on_time / completed * 100) if completed > 0 else 0
+
+            vendor_stats.append({
+                'vendor': vendor,
+                'total_jobs': total,
+                'completed': completed,
+                'in_progress': in_progress,
+                'completion_rate': round(completed / total * 100, 1),
+                'total_estimated': estimated,
+                'total_actual': actual,
+                'avg_cost_diff': round(avg_cost_diff, 1),
+                'avg_duration': round(avg_duration, 1),
+                'on_time_rate': round(on_time_rate, 1),
+            })
+
+        vendor_stats.sort(key=lambda x: x['total_jobs'], reverse=True)
+
+        context.update({
+            'vendor_stats': vendor_stats,
+            'total_vendors': len(vendor_stats),
+            'filter_start_date': start_date or '',
+            'filter_end_date': end_date or '',
+        })
+        return context
+
+
+class DepartmentDistributionReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'reports/department_distribution.html'
+
+    def test_func(self):
+        return hasattr(self.request.user, 'role') and self.request.user.role == 'IT_ADMIN'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        request = self.request
+
+        from accounts.models import Department
+        from requests.models import Assignment
+
+        dept_data = []
+        for dept in Department.objects.all():
+            users = dept.user_set.all()
+            total_users = users.count()
+
+            assigned = Assignment.objects.filter(
+                user__in=users, returned_date__isnull=True
+            ).count()
+
+            equipment_count = Equipment.objects.filter(
+                assigned_to__in=users
+            ).count()
+
+            total_value = Equipment.objects.filter(
+                assigned_to__in=users
+            ).aggregate(total=Sum('purchase_cost'))['total'] or 0
+
+            dept_data.append({
+                'department': dept,
+                'total_users': total_users,
+                'assigned_count': assigned,
+                'equipment_count': equipment_count,
+                'total_value': float(total_value),
+                'avg_per_user': round(equipment_count / total_users, 1) if total_users > 0 else 0,
+            })
+
+        dept_data.sort(key=lambda x: x['equipment_count'], reverse=True)
+
+        total_equipment = sum(d['equipment_count'] for d in dept_data)
+        total_value = sum(d['total_value'] for d in dept_data)
+        total_users = sum(d['total_users'] for d in dept_data)
+
+        context.update({
+            'departments': dept_data,
+            'total_equipment': total_equipment,
+            'total_value': total_value,
+            'total_users': total_users,
+            'total_departments': len(dept_data),
+        })
+        return context
+
+
+class RequestTurnaroundReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'reports/request_turnaround.html'
+
+    def test_func(self):
+        return hasattr(self.request.user, 'role') and self.request.user.role == 'IT_ADMIN'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        request = self.request
+
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        priority = request.GET.get('priority')
+
+        from requests.models import Request
+
+        req_query = Request.objects.all()
+
+        if start_date:
+            try:
+                start = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
+                req_query = req_query.filter(created_at__gte=start)
+            except (ValueError, TypeError):
+                pass
+
+        if end_date:
+            try:
+                end = make_aware(datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+                req_query = req_query.filter(created_at__lte=end)
+            except (ValueError, TypeError):
+                pass
+
+        if priority:
+            req_query = req_query.filter(priority=priority)
+
+        from django.utils.timezone import now as utc_now
+        today = utc_now()
+
+        turnaround_data = []
+        for r in req_query[:300]:
+            if r.status == 'COMPLETED' and r.completed_at:
+                total_hours = (r.completed_at - r.created_at).total_seconds() / 3600
+                total_days = round(total_hours / 24, 1)
+            elif r.status != 'COMPLETED':
+                total_hours = (today - r.created_at).total_seconds() / 3600
+                total_days = round(total_hours / 24, 1)
+            else:
+                total_days = 0
+
+            manager_approval_time = None
+            it_approval_time = None
+            delivery_time = None
+
+            if hasattr(r, 'logs'):
+                logs = r.logs.all().order_by('timestamp')
+                prev_log = None
+                for log in logs:
+                    if prev_log:
+                        hours = (log.timestamp - prev_log.timestamp).total_seconds() / 3600
+                        if 'MANAGER_APPROVED' in log.action and 'MANAGER' not in str(prev_log.action):
+                            manager_approval_time = round(hours, 1)
+                        elif 'IT_RECEIVED' in log.action or 'COMPLETED' in log.action:
+                            if 'MANAGER' in str(prev_log.action):
+                                it_approval_time = round(hours, 1)
+                                delivery_time = round((log.timestamp - prev_log.timestamp).total_seconds() / 3600, 1)
+                    prev_log = log
+
+            turnaround_data.append({
+                'id': r.id,
+                'tracking_id': f"REQ-{r.created_at.year}-{str(r.id)[:8].upper()}",
+                'request_type': r.get_request_type_display() if hasattr(r, 'get_request_type_display') else r.request_type,
+                'priority': r.priority,
+                'priority_display': r.get_priority_display() if hasattr(r, 'get_priority_display') else r.priority,
+                'status': r.status,
+                'status_display': r.get_status_display(),
+                'user': r.user.get_full_name() or r.user.username,
+                'created_at': r.created_at,
+                'completed_at': r.completed_at,
+                'total_days': total_days,
+                'manager_time': manager_approval_time,
+                'it_time': it_approval_time,
+                'delivery_time': delivery_time,
+            })
+
+        turnaround_data.sort(key=lambda x: x['total_days'], reverse=True)
+
+        avg_turnaround = sum(r['total_days'] for r in turnaround_data) / len(turnaround_data) if turnaround_data else 0
+        avg_manager_time = sum(r['manager_time'] for r in turnaround_data if r['manager_time']) / len([r for r in turnaround_data if r['manager_time']]) if turnaround_data else 0
+        avg_it_time = sum(r['it_time'] for r in turnaround_data if r['it_time']) / len([r for r in turnaround_data if r['it_time']]) if turnaround_data else 0
+
+        context.update({
+            'turnaround_data': turnaround_data,
+            'total_requests': req_query.count(),
+            'completed_requests': req_query.filter(status='COMPLETED').count(),
+            'avg_turnaround': round(avg_turnaround, 1),
+            'avg_manager_time': round(avg_manager_time, 1),
+            'avg_it_time': round(avg_it_time, 1),
+            'filter_start_date': start_date or '',
+            'filter_end_date': end_date or '',
+            'filter_priority': priority or '',
+        })
+        return context

@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-4" x-data="reportApp()" x-cloak>
+    
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-black text-gray-800 flex items-center gap-3">
+                <span class="p-2 bg-custom-primary rounded-2xl shadow-lg">
+                    <i data-lucide="users" class="w-7 h-7 text-white"></i>
+                </span>
+                Department Distribution Report
+            </h1>
+            <p class="text-gray-500 mt-2 ml-14 font-medium">Equipment allocation across departments</p>
+        </div>
+        <button onclick="window.print()" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-700 hover:bg-gray-50">
+            <i data-lucide="printer" class="w-4 h-4 text-custom-primary"></i> Print
+        </button>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="glass-card rounded-2xl p-4 text-center">
+            <p class="text-2xl font-black text-gray-800">{{ total_departments }}</p>
+            <p class="text-xs font-bold text-gray-400 uppercase">Departments</p>
+        </div>
+        <div class="glass-card rounded-2xl p-4 text-center">
+            <p class="text-2xl font-black text-blue-600">{{ total_users }}</p>
+            <p class="text-xs font-bold text-gray-400 uppercase">Total Users</p>
+        </div>
+        <div class="glass-card rounded-2xl p-4 text-center">
+            <p class="text-2xl font-black text-emerald-600">{{ total_equipment }}</p>
+            <p class="text-xs font-bold text-gray-400 uppercase">Assigned Equipment</p>
+        </div>
+        <div class="glass-card rounded-2xl p-4 text-center bg-custom-primary text-white">
+            <p class="text-2xl font-black">PKR {{ total_value|floatformat:0 }}</p>
+            <p class="text-xs font-bold opacity-80 uppercase">Total Value</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div class="glass-card p-8 rounded-[2rem]">
+            <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <i data-lucide="bar-chart-2" class="text-custom-primary"></i> Equipment by Department
+            </h3>
+            <div id="chart-dept"></div>
+        </div>
+        <div class="glass-card p-8 rounded-[2rem]">
+            <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <i data-lucide="pie-chart" class="text-custom-primary"></i> Distribution Share
+            </h3>
+            <div id="chart-share"></div>
+        </div>
+    </div>
+
+    <div class="glass-card p-8 rounded-[2rem]">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b-2 border-gray-300 bg-gray-50">
+                        <th class="text-left py-3 px-4 font-black text-gray-700 uppercase text-xs">Department</th>
+                        <th class="text-center py-3 px-4 font-black text-gray-700 uppercase text-xs">Users</th>
+                        <th class="text-center py-3 px-4 font-black text-gray-700 uppercase text-xs">Assigned Count</th>
+                        <th class="text-center py-3 px-4 font-black text-gray-700 uppercase text-xs">Avg/User</th>
+                        <th class="text-right py-3 px-4 font-black text-gray-700 uppercase text-xs">Total Value</th>
+                        <th class="text-center py-3 px-4 font-black text-gray-700 uppercase text-xs">Share %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in departments %}
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-4 px-4">
+                            <p class="font-semibold">{{ d.department.name }}</p>
+                            <p class="text-xs text-gray-500">{{ d.department.description|default:"-" }}</p>
+                        </td>
+                        <td class="py-4 px-4 text-center">{{ d.total_users }}</td>
+                        <td class="py-4 px-4 text-center font-bold text-blue-600">{{ d.assigned_count }}</td>
+                        <td class="py-4 px-4 text-center">{{ d.avg_per_user }}</td>
+                        <td class="py-4 px-4 text-right font-medium">PKR {{ d.total_value|floatformat:0 }}</td>
+                        <td class="py-4 px-4 text-center">
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-custom-primary h-2 rounded-full" style="width: {% widthratio d.equipment_count total_equipment 100 %}%"></div>
+                            </div>
+                            <span class="text-xs text-gray-500">{% widthratio d.equipment_count total_equipment 100 %}%</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="py-8 text-center text-gray-500">No department data found</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function reportApp() {
+    init() {
+        initLucide();
+        this.$nextTick(() => {
+            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+            
+            const labels = [{% for d in departments %}'{{ d.department.name }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+            const values = [{% for d in departments %}{{ d.assigned_count }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+
+            new ApexCharts(document.querySelector("#chart-dept"), {
+                chart: { type: 'bar', height: 300, toolbar: { show: false } },
+                colors: [primaryColor, '#10b981', '#f59e0b', '#ef4444'],
+                series: [{ name: 'Equipment', data: values }],
+                xaxis: { categories: labels },
+                plotOptions: { bar: { borderRadius: 8, horizontal: true } }
+            }).render();
+
+            new ApexCharts(document.querySelector("#chart-share"), {
+                chart: { type: 'donut', height: 300, toolbar: { show: false } },
+                colors: [primaryColor, '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
+                series: values,
+                labels: labels,
+                plotOptions: { pie: { donut: { size: '75%' } } }
+            }).render();
+        });
+    }
+}
+</script>
+{% endblock %}
