@@ -318,6 +318,7 @@ class CompleteMaintenanceView(LoginRequiredMixin, UserPassesTestMixin, View):
             if m_record:
                 m_record.actual_cost = actual_cost or 0
                 m_record.actual_return_date = actual_date if actual_date else timezone.now().date()
+                m_record.status = 'COMPLETED'
                 m_record.repair_notes = notes
                 m_record.save()
 
