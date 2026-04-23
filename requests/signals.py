@@ -1,10 +1,60 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
 from datetime import date
 from .models import Assignment, Request, RequestLog
 from notifications.models import Notification
 from equipment.models import EquipmentLog
+
+
+@receiver(pre_save, sender=Request)
+def sync_maintenance_status(sender, instance, **kwargs):
+    """Sync maintenance record status when request status changes"""
+    if not instance.pk:
+        return
+    
+    try:
+        old_request = Request.objects.get(pk=instance.pk)
+    except Request.DoesNotExist:
+        return
+    
+    if old_request.status != instance.status:
+        from equipment.models import MaintenanceRecord
+        
+        if instance.status == 'COMPLETED':
+            m_record = MaintenanceRecord.objects.filter(request=instance).first()
+            if m_record and m_record.status != 'COMPLETED':
+                m_record.status = 'COMPLETED'
+                if m_record.actual_return_date is None:
+                    m_record.actual_return_date = timezone.now().date()
+                m_record.save()
+        
+        elif instance.status == 'IT_RECEIVED':
+            m_record = MaintenanceRecord.objects.filter(request=instance, status='IN_PROGRESS').first()
+            if m_record:
+                m_record.status = 'IN_PROGRESS'
+                m_record.save()
+
+
+@receiver(post_save, sender=Request)
+def create_maintenance_log(sender, instance, created, **kwargs):
+    """Create request log when status changes"""
+    if created:
+        return
+    
+    try:
+        old_request = Request.objects.get(pk=instance.pk)
+    except Request.DoesNotExist:
+        return
+    
+    if old_request.status != instance.status:
+        RequestLog.objects.create(
+            request=instance,
+            action_by=None,
+            old_status=old_request.status,
+            new_status=instance.status,
+            remarks=f"Status changed to {instance.status}"
+        )
 
 
 @receiver(post_save, sender=Assignment)
