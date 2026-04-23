@@ -559,7 +559,7 @@ class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
                 'status_display': eq.get_status_display,
                 'purchase_date': eq.purchase_date,
                 'purchase_cost': eq.purchase_cost,
-                'location': eq.location,
+                'location': '',
                 'warranty_expiry': eq.warranty_expiry,
                 'original_vendor': eq.original_vendor.name if eq.original_vendor else '',
                 'current_repair_vendor': eq.current_repair_vendor.name if eq.current_repair_vendor else '',

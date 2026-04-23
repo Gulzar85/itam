@@ -128,7 +128,6 @@
                         <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Warranty Expiry</th>
                         <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Vendor</th>
                         <th class="text-right py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Cost (PKR)</th>
-                        <th class="text-left py-3 px-3 font-black text-gray-700 uppercase text-xs tracking-wider">Location</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -151,11 +150,10 @@
                         <td class="py-3 px-3 whitespace-nowrap {% if eq.warranty_expiry and eq.warranty_expiry|slice:":4" < "2024" %}text-red-600{% endif %}">{{ eq.warranty_expiry|date:"d M Y"|default:"-" }}</td>
                         <td class="py-3 px-3">{{ eq.original_vendor|default:"-" }}</td>
                         <td class="py-3 px-3 text-right font-medium">{{ eq.purchase_cost|floatformat:0|default:"0" }}</td>
-                        <td class="py-3 px-3">{{ eq.location|default:"-" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="14" class="py-8 text-center text-gray-500">No equipment found</td>
+                        <td colspan="13" class="py-8 text-center text-gray-500">No equipment found</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -198,7 +196,7 @@ function tableReport() {
             if (!this.dt) return;
             const headers = [
                 'Tracking ID', 'Brand', 'Model', 'Serial Number', 'Category', 'Status', 
-                'Assigned To', 'Department', 'Assign Date', 'Purchase Date', 'Warranty Expiry', 'Vendor', 'Cost', 'Location'
+                'Assigned To', 'Department', 'Assign Date', 'Purchase Date', 'Warranty Expiry', 'Vendor', 'Cost'
             ];
             const rows = [headers];
             
