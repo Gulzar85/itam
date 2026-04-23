@@ -758,12 +758,12 @@ class RequestSummaryReportView(LoginRequiredMixin, UserPassesTestMixin, Template
             for log in logs[:10]:
                 timeline.append({
                     'action': f"{log.old_status} -> {log.new_status}",
-                    'timestamp': log.timestamp,
+                    'timestamp': log.timestamp.isoformat() if log.timestamp else None,
                     'by': log.action_by.get_full_name() if log.action_by else 'System',
                 })
 
             requests_data.append({
-                'id': r.id,
+                'id': str(r.id),
                 'tracking_id': f"REQ-{r.created_at.year}-{str(r.id)[:8].upper()}",
                 'request_type': r.get_request_type_display() if hasattr(r, 'get_request_type_display') else r.request_type,
                 'priority': r.priority,
@@ -772,7 +772,7 @@ class RequestSummaryReportView(LoginRequiredMixin, UserPassesTestMixin, Template
                 'status_display': r.get_status_display(),
                 'user': r.user.get_full_name() or r.user.username,
                 'department': r.user.department.name if r.user.department else '-',
-                'created_at': r.created_at,
+                'created_at': r.created_at.isoformat() if r.created_at else None,
                 'days_open': days_open,
                 'reason': r.reason[:100] if r.reason else '',
                 'timeline': timeline,
@@ -780,6 +780,7 @@ class RequestSummaryReportView(LoginRequiredMixin, UserPassesTestMixin, Template
 
         context.update({
             'requests': requests_data,
+            'requests_json': json.dumps(requests_data),
             'total_requests': req_query.count(),
             'pending_requests': req_query.filter(status='PENDING').count(),
             'approved_requests': req_query.filter(status__in=['MANAGER_APPROVED', 'IT_APPROVED']).count(),
@@ -1006,7 +1007,7 @@ class RequestTurnaroundReportView(LoginRequiredMixin, UserPassesTestMixin, Templ
                     prev_log = log
 
             turnaround_data.append({
-                'id': r.id,
+                'id': str(r.id),
                 'tracking_id': f"REQ-{r.created_at.year}-{str(r.id)[:8].upper()}",
                 'request_type': r.get_request_type_display() if hasattr(r, 'get_request_type_display') else r.request_type,
                 'priority': r.priority,
@@ -1014,8 +1015,8 @@ class RequestTurnaroundReportView(LoginRequiredMixin, UserPassesTestMixin, Templ
                 'status': r.status,
                 'status_display': r.get_status_display(),
                 'user': r.user.get_full_name() or r.user.username,
-                'created_at': r.created_at,
-                'completed_at': completed_log.timestamp if completed_log else None,
+                'created_at': r.created_at.isoformat() if r.created_at else None,
+                'completed_at': completed_log.timestamp.isoformat() if completed_log and completed_log.timestamp else None,
                 'total_days': total_days,
                 'manager_time': manager_approval_time,
                 'it_time': it_approval_time,
@@ -1036,6 +1037,7 @@ class RequestTurnaroundReportView(LoginRequiredMixin, UserPassesTestMixin, Templ
 
         context.update({
             'turnaround_data': turnaround_data,
+            'turnaround_data_json': json.dumps(turnaround_data),
             'total_requests': req_query.count(),
             'completed_requests': req_query.filter(status='COMPLETED').count(),
             'avg_turnaround': round(avg_turnaround, 1),
