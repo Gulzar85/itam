@@ -9,8 +9,9 @@ env_file = BASE_DIR / '.env'
 if env_file.exists():
     env.read_env(env_file)
 
-SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-in-production')
-DEBUG = env('DEBUG', default=False)
+SECRET_KEY = env.str(
+    'SECRET_KEY', default='django-insecure-change-in-production')
+DEBUG = env.bool('DEBUG', default=False)
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
 INSTALLED_APPS = [
