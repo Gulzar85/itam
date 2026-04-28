@@ -1,17 +1,7 @@
-:root {
-    /* Primary Theme Colors */
-    --primary-color: #2563eb;    /* Blue-600 */
-    --primary-hover: #1d4ed8;   /* Blue-700 */
-    --secondary-color: #64748b; /* Slate-500 */
-    
-    /* Backgrounds */
-    --bg-main: #f8fafc;
-    --bg-card: rgba(255, 255, 255, 0.8);
-    
-    /* Borders & Accents */
-    --border-color: rgba(226, 232, 240, 0.8);
-    --glass-blur: 12px;
-}
+/* ===== Main Styles extracted from various templates ===== */
+
+/* CSS Variables - These are now set dynamically from base.html via context processor */
+/* The :root variables in base.html will override these defaults */
 
 /* Custom Utility Classes */
 .btn-primary {

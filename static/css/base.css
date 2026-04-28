@@ -1,16 +1,7 @@
 /* ===== Base CSS extracted from base.html ===== */
 
-/* Alpine.js cloak */
-[x-cloak] { display: none !important; }
-
-/* CSS Variables */
-:root {
-    --primary-color: #DA291C;
-    --secondary-color: #FFC72C;
-    --accent-color: #FFBD0A;
-    --primary-color-alpha: #DA291C1A;
-    --accent-color-alpha: #FFBD0A1A;
-}
+/* CSS Variables - These are now set dynamically from base.html via context processor */
+/* The :root variables in base.html override these defaults */
 
 /* Glass Effects */
 .glass {
