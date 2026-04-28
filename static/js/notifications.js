@@ -80,12 +80,16 @@ function deleteNotification() {
         if (data.status === 'success') {
             location.reload();
         } else {
-            showToast('Error deleting notification', 'error');
+            if (window.showToast) {
+                window.showToast('Error deleting notification', 'error');
+            }
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('An error occurred', 'error');
+        if (window.showToast) {
+            window.showToast('An error occurred', 'error');
+        }
     });
 }
 
@@ -103,12 +107,16 @@ function markAsRead(notificationId) {
         if (data.status === 'success') {
             location.reload();
         } else {
-            showToast('Error marking notification as read', 'error');
+            if (window.showToast) {
+                window.showToast('Error marking notification as read', 'error');
+            }
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('An error occurred', 'error');
+        if (window.showToast) {
+            window.showToast('An error occurred', 'error');
+        }
     });
 }
 
@@ -123,13 +131,19 @@ function markAllAsRead() {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.status === 'error') {
-            showToast('Error marking all as read', 'error');
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            if (window.showToast) {
+                window.showToast('Error marking all as read', 'error');
+            }
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('An error occurred', 'error');
+        if (window.showToast) {
+            window.showToast('An error occurred', 'error');
+        }
     });
 }
 

@@ -1,19 +1,18 @@
-ERROR "GET /inventory/equipment/ HTTP/1.1" 500 207150
-INFO "GET / HTTP/1.1" 200 72065
-INFO "GET /notifications/ HTTP/1.1" 200 73309
-INFO "GET /static/js/notifications.js HTTP/1.1" 200 3943
-INFO "GET /inventory/equipment/ HTTP/1.1" 200 72022
-INFO "GET /static/js/equipment.js HTTP/1.1" 200 3572
-INFO "GET /notifications/ HTTP/1.1" 200 73309
-INFO "GET /inventory/equipment/ HTTP/1.1" 200 72022
-INFO "GET /notifications/ HTTP/1.1" 200 73309
-INFO "GET /notifications/?type=REQUEST_CREATED HTTP/1.1" 200 73309
-INFO "GET /notifications/?type=REQUEST_APPROVED HTTP/1.1" 200 73309
-INFO "GET /notifications/?priority=CRITICAL HTTP/1.1" 200 73309
-INFO "GET /notifications/?priority=LOW HTTP/1.1" 200 73309
-INFO "GET /notifications/?read=unread HTTP/1.1" 200 73309
-INFO "GET /notifications/?read=read HTTP/1.1" 200 73309
+INFO "GET /static/js/notifications.js HTTP/1.1" 304 0
 WARNING Not Found: /notifications/{% url "notifications:mark_all_read" %}
 WARNING "POST /notifications/%7B%%20url%20%22notifications:mark_all_read%22%20%%7D HTTP/1.1" 404 5609
+INFO "GET /notifications/ HTTP/1.1" 200 73569
+WARNING Forbidden (CSRF token from the 'X-Csrftoken' HTTP header has incorrect length.): /notifications/mark-read/326fdcf4-e5c1-4051-b9a3-2fc68c5a9510/
+WARNING "POST /notifications/mark-read/326fdcf4-e5c1-4051-b9a3-2fc68c5a9510/ HTTP/1.1" 403 2549
+INFO "GET /notifications/?read=read HTTP/1.1" 200 73569
+INFO "GET /notifications/?read=read HTTP/1.1" 200 73569
+INFO "GET /inventory/equipment/ HTTP/1.1" 200 72022
+INFO "GET /static/js/equipment.js HTTP/1.1" 304 0
+INFO "GET /inventory/equipment/ HTTP/1.1" 200 72022
+INFO "GET /notifications/ HTTP/1.1" 200 73569
 WARNING Not Found: /notifications/{% url "notifications:mark_all_read" %}
 WARNING "POST /notifications/%7B%%20url%20%22notifications:mark_all_read%22%20%%7D HTTP/1.1" 404 5609
+WARNING Forbidden (CSRF token from the 'X-Csrftoken' HTTP header has incorrect length.): /notifications/mark-read/326fdcf4-e5c1-4051-b9a3-2fc68c5a9510/
+WARNING "POST /notifications/mark-read/326fdcf4-e5c1-4051-b9a3-2fc68c5a9510/ HTTP/1.1" 403 2549
+WARNING Forbidden (CSRF token from the 'X-Csrftoken' HTTP header has incorrect length.): /notifications/delete/326fdcf4-e5c1-4051-b9a3-2fc68c5a9510/
+WARNING "POST /notifications/delete/326fdcf4-e5c1-4051-b9a3-2fc68c5a9510/ HTTP/1.1" 403 2549

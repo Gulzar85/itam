@@ -14,10 +14,43 @@ class NotificationListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        return Notification.objects.filter(
+        queryset = Notification.objects.filter(
             recipient=self.request.user,
             is_archived=False
         ).order_by('-created_at')
+        
+        # Filter by type
+        notification_type = self.request.GET.get('type')
+        if notification_type:
+            queryset = queryset.filter(notification_type=notification_type)
+        
+        # Filter by priority
+        priority = self.request.GET.get('priority')
+        if priority:
+            queryset = queryset.filter(priority=priority)
+        
+        # Filter by read status
+        read_status = self.request.GET.get('read')
+        if read_status == 'unread':
+            queryset = queryset.filter(is_read=False)
+        elif read_status == 'read':
+            queryset = queryset.filter(is_read=True)
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Count unread notifications
+        context['unread_count'] = Notification.objects.filter(
+            recipient=self.request.user,
+            is_read=False,
+            is_archived=False
+        ).count()
+        # Pass filter values to template
+        context['current_type'] = self.request.GET.get('type', '')
+        context['current_priority'] = self.request.GET.get('priority', '')
+        context['current_read'] = self.request.GET.get('read', '')
+        return context
 
 
 class NotificationDetailView(LoginRequiredMixin, DetailView):

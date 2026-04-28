@@ -25,27 +25,27 @@
         <div class="flex flex-wrap gap-3">
             <select id="filterType" class="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm flex-1 min-w-[200px]">
                 <option value="">All Types</option>
-                <option value="REQUEST_CREATED">Request Created</option>
-                <option value="REQUEST_APPROVED">Request Approved</option>
-                <option value="REQUEST_REJECTED">Request Rejected</option>
-                <option value="REQUEST_COMPLETED">Request Completed</option>
-                <option value="EQUIPMENT_ASSIGNED">Equipment Assigned</option>
-                <option value="MAINTENANCE_DUE">Maintenance Due</option>
-                <option value="WARRANTY_EXPIRING">Warranty Expiring</option>
+                <option value="REQUEST_CREATED" {% if current_type == 'REQUEST_CREATED' %}selected{% endif %}>Request Created</option>
+                <option value="REQUEST_APPROVED" {% if current_type == 'REQUEST_APPROVED' %}selected{% endif %}>Request Approved</option>
+                <option value="REQUEST_REJECTED" {% if current_type == 'REQUEST_REJECTED' %}selected{% endif %}>Request Rejected</option>
+                <option value="REQUEST_COMPLETED" {% if current_type == 'REQUEST_COMPLETED' %}selected{% endif %}>Request Completed</option>
+                <option value="EQUIPMENT_ASSIGNED" {% if current_type == 'EQUIPMENT_ASSIGNED' %}selected{% endif %}>Equipment Assigned</option>
+                <option value="MAINTENANCE_DUE" {% if current_type == 'MAINTENANCE_DUE' %}selected{% endif %}>Maintenance Due</option>
+                <option value="WARRANTY_EXPIRING" {% if current_type == 'WARRANTY_EXPIRING' %}selected{% endif %}>Warranty Expiring</option>
             </select>
         
             <select id="filterPriority" class="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm flex-1 min-w-[200px]">
                 <option value="">All Priorities</option>
-                <option value="CRITICAL">Critical</option>
-                <option value="HIGH">High</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="LOW">Low</option>
+                <option value="CRITICAL" {% if current_priority == 'CRITICAL' %}selected{% endif %}>Critical</option>
+                <option value="HIGH" {% if current_priority == 'HIGH' %}selected{% endif %}>High</option>
+                <option value="MEDIUM" {% if current_priority == 'MEDIUM' %}selected{% endif %}>Medium</option>
+                <option value="LOW" {% if current_priority == 'LOW' %}selected{% endif %}>Low</option>
             </select>
         
             <select id="filterRead" class="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm flex-1 min-w-[200px]">
                 <option value="">All</option>
-                <option value="unread">Unread Only</option>
-                <option value="read">Read Only</option>
+                <option value="unread" {% if current_read == 'unread' %}selected{% endif %}>Unread Only</option>
+                <option value="read" {% if current_read == 'read' %}selected{% endif %}>Read Only</option>
             </select>
         </div>
     </div>
@@ -154,29 +154,6 @@
     </div>
 
     {% include 'includes/pagination.html' with page_obj=page_obj paginator=paginator %}
-
-    <!-- Confirm Delete Modal -->
-    <div id="confirmDeleteModal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md">
-            <div class="bg-white rounded-2xl shadow-2xl p-6 m-4">
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                        <i data-lucide="trash-2" class="w-6 h-6 text-red-600"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-800">Delete Notification</h3>
-                        <p class="text-sm text-slate-500">This action cannot be undone</p>
-                    </div>
-                </div>
-                <p class="text-slate-600 mb-6">Are you sure you want to delete this notification? This action cannot be undone.</p>
-                <div class="flex gap-3">
-                    <button onclick="closeDeleteModal()" class="flex-1 py-3 rounded-xl font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
-                    <button onclick="deleteNotification()" class="flex-1 py-3 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700">Delete</button>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 {% block extra_js %}
@@ -207,136 +184,5 @@
                 <button onclick="deleteNotification()" class="flex-1 py-3 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700">Delete</button>
             </div>
         </div>
-    </div>
 </div>
-
-<script>
-let pendingDeleteId = null;
-
-function confirmDelete(notificationId) {
-    pendingDeleteId = notificationId;
-    document.getElementById('confirmDeleteModal').classList.remove('hidden');
-    if (window.lucide) {
-        lucide.createIcons();
-    }
-}
-
-function closeDeleteModal() {
-    document.getElementById('confirmDeleteModal').classList.add('hidden');
-    pendingDeleteId = null;
-}
-
-function deleteNotification() {
-    if (!pendingDeleteId) return;
-    const notificationId = pendingDeleteId;
-    closeDeleteModal();
-    
-    fetch(`/notifications/delete/${notificationId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            location.reload();
-        } else {
-            showToast('Error deleting notification', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred', 'error');
-    });
-}
-
-// Mark single notification as read
-function markAsRead(notificationId) {
-    fetch(`/notifications/mark-read/${notificationId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            location.reload();
-        } else {
-            showToast('Error marking notification as read', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred', 'error');
-    });
-}
-
-// Mark all notifications as read
-function markAllAsRead() {
-    fetch(MARK_ALL_READ_URL, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            location.reload();
-        } else {
-            showToast('Error marking all as read', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred', 'error');
-    });
-}
-
-// Toast notification function
-function showToast(message, type = 'success') {
-    const toastContainer = document.body;
-    const toast = document.createElement('div');
-    toast.className = `fixed bottom-5 right-5 z-[60] glass px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border-l-4 animate-bounce-in notification-toast ${
-        type === 'success' ? 'border-green-500' : 'border-red-500'
-    }`;
-    toast.innerHTML = `
-        <div class="${type === 'success' ? 'text-green-500' : 'text-red-500'}">
-            <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-6 h-6"></i>
-        </div>
-        <div class="flex flex-col">
-            <span class="text-xs font-black uppercase tracking-wider" style="color: var(--primary-color)">
-                ${type === 'success' ? 'Success' : 'Error'}
-            </span>
-            <span class="font-medium text-gray-800">${message}</span>
-        </div>
-        <button onclick="this.parentElement.remove()" class="ml-auto text-gray-400 hover:text-gray-600">
-            <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-    `;
-    toastContainer.appendChild(toast);
-    
-    if (window.lucide) {
-        lucide.createIcons();
-    }
-    
-    setTimeout(() => {
-        if (toast && toast.parentElement) {
-            toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 300);
-        }
-    }, 4000);
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    if (window.lucide) {
-        lucide.createIcons();
-    }
-});
-</script>
 {% endblock %}
