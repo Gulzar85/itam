@@ -3,21 +3,53 @@
 {% block content %}
 <div class="max-w-6xl mx-auto animate-fade-in-up">
     <div class="mb-8">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-3xl font-bold text-gray-800">Notifications</h1>
                 <p class="text-gray-600 mt-1">Stay updated with your requests and system alerts</p>
             </div>
             <div class="flex gap-3">
+                {% if unread_count > 0 %}
                 <button onclick="markAllAsRead()" class="text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all shadow-lg flex items-center gap-2" style="background-color: var(--primary-color); box-shadow: 0 10px 15px -3px var(--primary-color-alpha);">
                     <i data-lucide="check-check" class="w-4 h-4"></i>
-                    Mark All Read
+                    Mark All Read ({{ unread_count }})
                 </button>
+                {% endif %}
             </div>
         </div>
     </div>
 
-    <div class="space-y-4 stagger-children">
+    <!-- Filter Bar -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border mb-6">
+        <div class="flex flex-wrap gap-3">
+            <select id="filterType" class="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm flex-1 min-w-[200px]">
+                <option value="">All Types</option>
+                <option value="REQUEST_CREATED">Request Created</option>
+                <option value="REQUEST_APPROVED">Request Approved</option>
+                <option value="REQUEST_REJECTED">Request Rejected</option>
+                <option value="REQUEST_COMPLETED">Request Completed</option>
+                <option value="EQUIPMENT_ASSIGNED">Equipment Assigned</option>
+                <option value="MAINTENANCE_DUE">Maintenance Due</option>
+                <option value="WARRANTY_EXPIRING">Warranty Expiring</option>
+            </select>
+        
+            <select id="filterPriority" class="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm flex-1 min-w-[200px]">
+                <option value="">All Priorities</option>
+                <option value="CRITICAL">Critical</option>
+                <option value="HIGH">High</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="LOW">Low</option>
+            </select>
+        
+            <select id="filterRead" class="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm flex-1 min-w-[200px]">
+                <option value="">All</option>
+                <option value="unread">Unread Only</option>
+                <option value="read">Read Only</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="space-y-4 stagger-children" id="notificationList">
         {% for notification in notifications %}
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 {% if not notification.is_read %}border-l-4{% endif %} hover:shadow-lg transition-all duration-300 animate-fade-in-up" {% if not notification.is_read %}style="border-left-color: var(--primary-color);"{% endif %}>
             <div class="flex items-start gap-4">
@@ -28,13 +60,15 @@
                         {% elif notification.priority == 'MEDIUM' %}bg-yellow-100
                         {% else %}{% endif %}"
                         {% if notification.priority != 'CRITICAL' and notification.priority != 'HIGH' and notification.priority != 'MEDIUM' %}style="background-color: color-mix(in srgb, var(--primary-color) 10%, white);"{% endif %}>                        
-                        <i data-lucide="{% if notification.notification_type == 'REQUEST_CREATED' %}plus-circle{% elif notification.notification_type == 'REQUEST_APPROVED' %}check-circle{% elif notification.notification_type == 'REQUEST_REJECTED' %}x-circle{% elif notification.notification_type == 'REQUEST_COMPLETED' %}check-circle-2{% elif notification.notification_type == 'EQUIPMENT_ASSIGNED' %}user-check{% elif notification.notification_type == 'MAINTENANCE_DUE' %}wrench{% elif notification.notification_type == 'WARRANTY_EXPIRING' %}alert-triangle{% else %}bell{% endif %}" 
-                           class="w-6 h-6 
-                        {% if notification.priority == 'CRITICAL' %}text-red-600
-                        {% elif notification.priority == 'HIGH' %}text-orange-600
-                        {% elif notification.priority == 'MEDIUM' %}text-yellow-600
-                        {% else %}text-custom-primary{% endif %}"
-                        {% if notification.priority != 'CRITICAL' and notification.priority != 'HIGH' and notification.priority != 'MEDIUM' %}style="color: var(--primary-color);"{% endif %}></i>
+                        {% with type=notification.notification_type priority=notification.priority %}
+                        <i data-lucide="{% if type == 'REQUEST_CREATED' %}plus-circle{% elif type == 'REQUEST_APPROVED' %}check-circle{% elif type == 'REQUEST_REJECTED' %}x-circle{% elif type == 'REQUEST_COMPLETED' %}check-circle-2{% elif type == 'EQUIPMENT_ASSIGNED' %}user-check{% elif type == 'MAINTENANCE_DUE' %}wrench{% elif type == 'WARRANTY_EXPIRING' %}alert-triangle{% else %}bell{% endif %}" 
+                               class="w-6 h-6 
+                            {% if priority == 'CRITICAL' %}text-red-600
+                            {% elif priority == 'HIGH' %}text-orange-600
+                            {% elif priority == 'MEDIUM' %}text-yellow-600
+                            {% else %}text-custom-primary{% endif %}"
+                            {% if priority != 'CRITICAL' and priority != 'HIGH' and priority != 'MEDIUM' %}style="color: var(--primary-color);"{% endif %}></i>
+                        {% endwith %}
                     </div>
                 </div>
 
@@ -45,30 +79,30 @@
                                 <h3 class="text-lg font-semibold text-gray-800 mb-1 hover:underline" style="color: var(--primary-color);">{{ notification.title }}</h3>
                             </a>
                             <p class="text-gray-600 mb-3">{{ notification.message }}</p>
-
+                            
                             <div class="flex flex-wrap items-center gap-3">
                                 {% if notification.related_request %}
                                 <a href="{% url 'requests:detail' notification.related_request.id %}" class="inline-flex items-center gap-2 text-sm font-medium hover:opacity-80" style="color: var(--primary-color);">
                                     <i data-lucide="file-text" class="w-4 h-4"></i>
                                     Request #{{ notification.related_request.request_id }}
                                 </a>
-                                <span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                                    {{ notification.related_request.get_status_display }}
-                                </span>
+                                {% with status=notification.related_request.status status_choices=notification.related_request.STATUS_CHOICES %}
+                                    {% include 'includes/status_badge.html' %}
+                                {% endwith %}
                                 {% endif %}
-
+                                
                                 {% if notification.related_equipment %}
                                 <a href="{% url 'equipment:equipment_detail' notification.related_equipment.id %}" class="inline-flex items-center gap-2 text-sm font-medium hover:opacity-80" style="color: var(--primary-color);">
                                     <i data-lucide="monitor" class="w-4 h-4"></i>
                                     {{ notification.related_equipment.tracking_id }}
                                 </a>
-                                <span class="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                                    {{ notification.related_equipment.get_status_display }}
-                                </span>
+                                {% with status=notification.related_equipment.status status_choices=notification.related_equipment.STATUS_CHOICES %}
+                                    {% include 'includes/status_badge.html' %}
+                                {% endwith %}
                                 {% endif %}
                             </div>
                         </div>
-
+                        
                         <div class="flex items-center gap-2 ml-4">
                             {% if not notification.is_read %}
                             <button onclick="markAsRead('{{ notification.id }}')" class="p-2 rounded-lg transition-colors" style="color: var(--primary-color);" title="Mark as read">
@@ -80,19 +114,21 @@
                             </button>
                         </div>
                     </div>
-
+                    
                     <div class="flex items-center flex-wrap gap-4 mt-3 text-sm text-gray-500">
                         <span class="flex items-center gap-1">
                             <i data-lucide="clock" class="w-3 h-3"></i>
                             {{ notification.created_at|date:"M d, Y H:i" }}
                         </span>
+                        {% with priority=notification.priority %}
                         <span class="px-2 py-1 rounded text-xs font-medium
-                            {% if notification.priority == 'CRITICAL' %}bg-red-100 text-red-800
-                            {% elif notification.priority == 'HIGH' %}bg-orange-100 text-orange-800
-                            {% elif notification.priority == 'MEDIUM' %}bg-yellow-100 text-yellow-800
+                            {% if priority == 'CRITICAL' %}bg-red-100 text-red-800
+                            {% elif priority == 'HIGH' %}bg-orange-100 text-orange-800
+                            {% elif priority == 'MEDIUM' %}bg-yellow-100 text-yellow-800
                             {% else %}bg-gray-100 text-gray-800{% endif %}">
                             {{ notification.get_priority_display }}
                         </span>
+                        {% endwith %}
                         <span class="px-2 py-1 rounded text-xs font-medium
                             {% if notification.is_read %}bg-green-100 text-green-800{% else %}bg-amber-100 text-amber-800{% endif %}">
                             {% if notification.is_read %}Read{% else %}Unread{% endif %}
@@ -116,28 +152,35 @@
         {% endfor %}
     </div>
 
-    {% if is_paginated %}
-    <div class="mt-8 flex justify-center">
-        <nav class="flex items-center gap-2">
-            {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 rounded-lg border border-gray-200 transition-colors" style="hover:color: var(--primary-color);">
-                <i data-lucide="chevron-left" class="w-4 h-4"></i>
-            </a>
-            {% endif %}
+    {% include 'includes/pagination.html' with page_obj=page_obj paginator=paginator %}
 
-            <span class="px-4 py-2 text-sm text-gray-600">
-                Page {{ page_obj.number }} of {{ paginator.num_pages }}
-            </span>
-
-            {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 rounded-lg border border-gray-200 transition-colors" style="hover:color: var(--primary-color);">
-                <i data-lucide="chevron-right" class="w-4 h-4"></i>
-            </a>
-            {% endif %}
-        </nav>
+    <!-- Confirm Delete Modal -->
+    <div id="confirmDeleteModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md">
+            <div class="bg-white rounded-2xl shadow-2xl p-6 m-4">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                        <i data-lucide="trash-2" class="w-6 h-6 text-red-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">Delete Notification</h3>
+                        <p class="text-sm text-slate-500">This action cannot be undone</p>
+                    </div>
+                </div>
+                <p class="text-slate-600 mb-6">Are you sure you want to delete this notification? This action cannot be undone.</p>
+                <div class="flex gap-3">
+                    <button onclick="closeDeleteModal()" class="flex-1 py-3 rounded-xl font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button onclick="deleteNotification()" class="flex-1 py-3 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700">Delete</button>
+                </div>
+            </div>
+        </div>
     </div>
-    {% endif %}
 </div>
+
+{% block extra_js %}
+<script src="{% static 'js/notifications.js' %}"></script>
+{% endblock %}
 
 <!-- Confirm Delete Modal -->
 <div id="confirmDeleteModal" class="fixed inset-0 z-50 hidden">
