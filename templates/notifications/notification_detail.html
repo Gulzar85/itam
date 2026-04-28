@@ -48,13 +48,13 @@
             </div>
 
             <div class="flex items-center gap-3">
+                {% with priority=object.priority %}
+                    {% include 'includes/status_badge.html' with status=priority status_choices=object.PRIORITY_CHOICES %}
+                {% endwith %}
                 <span class="px-3 py-1 rounded-full text-sm font-medium
-                    {% if object.priority == 'CRITICAL' %}bg-red-100 text-red-700
-                    {% elif object.priority == 'HIGH' %}bg-orange-100 text-orange-700
-                    {% elif object.priority == 'MEDIUM' %}bg-yellow-100 text-yellow-700
-                    {% else %}bg-gray-100 text-gray-700{% endif %}">
-                    {{ object.get_priority_display }}
-                </span>
+                            {% if object.is_read %}bg-green-100 text-green-800{% else %}bg-amber-100 text-amber-800{% endif %}">
+                            {% if object.is_read %}Read{% else %}Unread{% endif %}
+                        </span>
                 {% if not object.is_read %}
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-red-100 text-red-600 animate-pulse">
                     <i data-lucide="circle" class="w-2 h-2 mr-1"></i>
@@ -96,20 +96,15 @@
                 </div>
                 {% endif %}
 
-                {% if object.related_equipment %}
-                <div>
-                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Related Equipment</h3>
-                    <a href="{% url 'equipment:equipment_detail' object.related_equipment.id %}" class="font-medium hover:underline" style="color: var(--primary-color);">
-                        {{ object.related_equipment.tracking_id }}
-                    </a>
-                    <p class="text-sm text-gray-500">{{ object.related_equipment.brand }} {{ object.related_equipment.model_number }}</p>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                            {{ object.related_equipment.get_status_display }}
-                        </span>
-                    </div>
-                </div>
-                {% endif %}
+                            {% if object.related_equipment %}
+                            <a href="{% url 'equipment:equipment_detail' object.related_equipment.id %}" class="inline-flex items-center gap-2 text-sm font-medium hover:opacity-80" style="color: var(--primary-color);">
+                                <i data-lucide="monitor" class="w-4 h-4"></i>
+                                {{ object.related_equipment.tracking_id }}
+                            </a>
+                            {% with status=object.related_equipment.status status_choices=object.related_equipment.STATUS_CHOICES %}
+                                {% include 'includes/status_badge.html' %}
+                            {% endwith %}
+                            {% endif %}
 
                 <div>
                     <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Created</h3>

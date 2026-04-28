@@ -75,13 +75,9 @@
                         </td>
 
                         <td class="px-6 py-4">
-                            <span class="text-xs font-semibold px-2.5 py-1 rounded-full
-                                {% if req.priority == 'CRITICAL' %}bg-red-100 text-red-700
-                                {% elif req.priority == 'HIGH' %}bg-orange-100 text-orange-700
-                                {% elif req.priority == 'MEDIUM' %}bg-yellow-100 text-yellow-700
-                                {% else %}bg-gray-100 text-gray-600{% endif %}">
-                                {{ req.get_priority_display }}
-                            </span>
+                            {% with priority=req.priority %}
+                            {% include 'includes/status_badge.html' with status=priority status_choices=req.STATUS_CHOICES %}
+                            {% endwith %}
                         </td>
 
                         <td class="px-6 py-4">

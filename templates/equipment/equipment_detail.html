@@ -53,13 +53,11 @@
 
                     <div class="md:col-span-7 space-y-6">
                         <div class="flex flex-wrap gap-3">
-                             <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-2
-                                {% if equipment.status == 'AVAILABLE' %}bg-emerald-500/10 text-emerald-600 border border-emerald-500/20
-                                {% elif equipment.status == 'ASSIGNED' %}bg-blue-500/10 text-blue-600 border border-blue-500/20
-                                {% elif equipment.status == 'REPAIRING' %}bg-amber-500/10 text-amber-600 border border-amber-500/20
-                                {% else %}bg-slate-700 text-white{% endif %}">
-                                <span class="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
-                                {{ equipment.get_status_display }}
+                            {% with status=equipment.status status_choices=equipment.STATUS_CHOICES %}
+                                {% include 'includes/status_badge.html' %}
+                            {% endwith %}
+                            <span class="px-4 py-1.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest border border-slate-200">
+                                SN: {{ equipment.serial_number }}
                             </span>
                             <span class="px-4 py-1.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest border border-slate-200">
                                 SN: {{ equipment.serial_number }}

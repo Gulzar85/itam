@@ -132,25 +132,13 @@
                         </td>
 
                         <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold uppercase
-                                {% if req.priority == 'CRITICAL' %}bg-red-100 text-red-700
-                                {% elif req.priority == 'HIGH' %}bg-orange-100 text-orange-700
-                                {% elif req.priority == 'MEDIUM' %}bg-yellow-100 text-yellow-700
-                                {% else %}bg-gray-100 text-gray-600{% endif %}">
-                                {{ req.get_priority_display }}
-                            </span>
+                            {% with priority=req.priority %}
+                            {% include 'includes/status_badge.html' with status=priority status_choices=req.STATUS_CHOICES %}
+                            {% endwith %}
                         </td>
 
                         <td class="px-6 py-4">
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold
-                                {% if req.status == 'COMPLETED' %}bg-emerald-100 text-emerald-700
-                                {% elif req.status == 'REJECTED' %}bg-red-100 text-red-700
-                                {% elif req.status == 'IN_PROGRESS' %}bg-blue-100 text-blue-700
-                                {% elif req.status == 'MANAGER_APPROVED' %}bg-indigo-100 text-indigo-700
-                                {% else %}bg-amber-100 text-amber-700{% endif %}">
-                                {% if req.status == 'PENDING' %}<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>{% endif %}
-                                {{ req.get_status_display }}
-                            </span>
+                            {% include 'includes/status_badge.html' with status=req.status status_choices=req.STATUS_CHOICES %}
                         </td>
 
                         <td class="px-6 py-4 text-sm text-gray-500">
