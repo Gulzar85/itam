@@ -223,20 +223,7 @@
         if (window.lucide) lucide.createIcons();
     }
 </script>
-
-<style>
-    input:focus, select:focus {
-        outline: none;
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px var(--primary-color-alpha);
-    }
-    .modal-backdrop {
-        background-color: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-    }
-</style>
-{% endblock %}
-
+ 
 <!-- QR Search Modal -->
 <div id="qrModal" class="fixed inset-0 z-50 hidden">
     <div class="modal-backdrop absolute inset-0" onclick="closeQRModal()"></div>
