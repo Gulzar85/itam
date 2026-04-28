@@ -11,13 +11,11 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">  
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link rel="icon" type="image/png" href="{% if business_info.logo %}{{ business_info.logo.url }}{% else %}{% static 'favicon.png' %}{% endif %}">     
     
-    <style>[x-cloak] { display: none !important; }</style>
-<script>
+    <script>
         // CRITICAL: Yeh Tailwind ko batata hai ke custom-primary ka matlab CSS variable hai
         tailwind.config = {
             theme: {
@@ -34,199 +32,53 @@
         }
     </script>
 
-    <style>
-        [x-cloak] { display: none !important; }
-
-        :root {
-            --primary-color: {{ theme_colors.primary|default:"#DA291C" }};
-            --secondary-color: {{ business_info.secondary_color|default:"#FFC72C" }};
-            --accent-color: {{ theme_colors.accent|default:"#FFBD0A" }};
-            --primary-color-alpha: {{ theme_colors.primary_alpha|default:"#DA291C1A" }};
-            --accent-color-alpha: {{ theme_colors.accent_alpha|default:"#FFBD0A1A" }};
-        }
-
-        .glass {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .glass-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(16px) saturate(180%);
-            -webkit-backdrop-filter: blur(16px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-        }
-
-        .glass-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.15);
-        }
-
-        .bg-custom-primary { background-color: var(--primary-color) !important; }
-        .text-custom-primary { color: var(--primary-color) !important; }
-        .border-custom-primary { border-color: var(--primary-color) !important; }
-        .hover\:bg-custom-primary:hover { background-color: var(--primary-color) !important; }
-        .hover\:text-custom-primary:hover { color: var(--primary-color) !important; }
-
-        .bg-custom-accent { background-color: var(--accent-color) !important; }
-        .text-custom-accent { color: var(--accent-color) !important; }
-        .border-custom-accent { border-color: var(--accent-color) !important; }
-        .hover\:bg-custom-accent:hover { background-color: var(--accent-color) !important; }
-        .hover\:text-custom-accent:hover { color: var(--accent-color) !important; }
-
-        body {
-            background-color: #f9fafb;
-        }
-
-        /* Page Transitions */
-        @keyframes fade-in-up {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes fade-in {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slide-in-left {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        @keyframes scale-in {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .animate-fade-in-up {
-            animation: fade-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-
-        .animate-fade-in {
-            animation: fade-in 0.4s ease forwards;
-        }
-
-        .animate-slide-in-left {
-            animation: slide-in-left 0.4s ease forwards;
-        }
-
-        .animate-scale-in {
-            animation: scale-in 0.3s ease forwards;
-        }
-
-        .delay-100 { animation-delay: 0.1s; }
-        .delay-200 { animation-delay: 0.2s; }
-        .delay-300 { animation-delay: 0.3s; }
-        .delay-400 { animation-delay: 0.4s; }
-
-        /* Smooth transitions for all interactive elements */
-        a, button, input, select {
-            transition: all 0.2s ease;
-        }
-
-        /* Table row hover */
-        tbody tr {
-            transition: background-color 0.2s ease;
-        }
-
-        /* Sidebar transition */
-        #sidebar {
-            transition: transform 0.3s ease, width 0.3s ease;
-        }
-
-        /* Stagger children animation */
-        .stagger-children > * {
-            opacity: 0;
-            animation: fade-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-        .stagger-children > *:nth-child(1) { animation-delay: 0s; }
-        .stagger-children > *:nth-child(2) { animation-delay: 0.05s; }
-        .stagger-children > *:nth-child(3) { animation-delay: 0.1s; }
-        .stagger-children > *:nth-child(4) { animation-delay: 0.15s; }
-        .stagger-children > *:nth-child(5) { animation-delay: 0.2s; }
-        .stagger-children > *:nth-child(6) { animation-delay: 0.25s; }
-        .stagger-children > *:nth-child(7) { animation-delay: 0.3s; }
-        .stagger-children > *:nth-child(8) { animation-delay: 0.35s; }
-
-        .notification-badge {
-            background-color: var(--primary-color);
-        }
-
-        .input-focus:focus {
-            box-shadow: 0 0 0 4px var(--primary-color-alpha);
-            border-color: var(--primary-color);
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
 </head>
 
 <body class="font-sans text-gray-900">
+    <a href="#main-content" class="skip-to-content">Skip to main content</a>
     <div class="flex h-screen overflow-hidden">
         {% include 'includes/sidebar.html' %}
         <div id="main-content" class="flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300" style="margin-left: 260px;">
-
+            
             {% include 'includes/navbar.html' %}
-
+            
             {% if messages %}
-            <div class="fixed bottom-5 right-5 z-[60] space-y-3">
+            <div id="toastContainer" class="fixed bottom-5 right-5 z-[60] space-y-3">
                 {% for message in messages %}
                 <div class="bg-white px-6 py-4 rounded-2xl shadow-lg flex items-center gap-4 border-l-4
                     {% if message.tags == 'success' %} border-green-500 {% else %} border-red-500 {% endif %}
                     animate-bounce-in notification-toast">
-
+                    
                     <div class="{% if message.tags == 'success' %}text-green-500{% else %}text-red-500{% endif %}">
                         <i data-lucide="{% if message.tags == 'success' %}check-circle{% else %}alert-circle{% endif %}" class="w-6 h-6"></i>
                     </div>
-
+                    
                     <div class="flex flex-col">
                         <span class="text-xs font-black uppercase tracking-wider" style="color: var(--primary-color)">
                             {{ message.tags|default:"Notification" }}
                         </span>
                         <span class="font-medium text-gray-800">{{ message }}</span>
                     </div>
-
-                    <button onclick="$(this).parent().fadeOut()" class="ml-auto text-gray-400 hover:text-gray-600">
+                    
+                    <button onclick="this.parentElement.remove()" class="ml-auto text-gray-400 hover:text-gray-600">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
                 {% endfor %}
             </div>
             {% endif %}
-
-            <main class="p-6 overflow-y-auto flex-1 bg-opacity-50">
+            
+            <main id="main-content-area" class="p-6 overflow-y-auto flex-1 bg-opacity-50">
                 {% block content %}{% endblock %}
             </main>
-
+        
         </div>
     </div>
-
+    
     {% include 'includes/remarks_modal.html' %}
-
-    <script>
-        // Icons initialize karne ke liye function
-        function initLucide() {
-            if (window.lucide) {
-                lucide.createIcons();
-            }
-        }
-
-        $(document).ready(function() {
-            initLucide();
-            setTimeout(() => {
-                $('.notification-toast').fadeOut('slow', function() {
-                    $(this).remove();
-                });
-            }, 4000);
-        });
-
-        // Alpine.js ke saath re-initialize karna zaroori hai
-        document.addEventListener('alpine:initialized', () => {
-            initLucide();
-        });
-    </script>
+    
+    <script src="{% static 'js/base.js' %}"></script>
     
     {% block extra_js %}{% endblock %}
 </body>
