@@ -27,8 +27,7 @@
                         {% elif notification.priority == 'HIGH' %}bg-orange-100
                         {% elif notification.priority == 'MEDIUM' %}bg-yellow-100
                         {% else %}{% endif %}"
-                        {% if notification.priority != 'CRITICAL' and notification.priority != 'HIGH' and notification.priority != 'MEDIUM' %}style="background-color: rgba(var(--primary-color-rgb, 59, 130, 246), 0.1);"{% endif %}>
-                        
+                        {% if notification.priority != 'CRITICAL' and notification.priority != 'HIGH' and notification.priority != 'MEDIUM' %}style="background-color: color-mix(in srgb, var(--primary-color) 10%, white);"{% endif %}>                        
                         <i data-lucide="{% if notification.notification_type == 'REQUEST_CREATED' %}plus-circle{% elif notification.notification_type == 'REQUEST_APPROVED' %}check-circle{% elif notification.notification_type == 'REQUEST_REJECTED' %}x-circle{% elif notification.notification_type == 'REQUEST_COMPLETED' %}check-circle-2{% elif notification.notification_type == 'EQUIPMENT_ASSIGNED' %}user-check{% elif notification.notification_type == 'MAINTENANCE_DUE' %}wrench{% elif notification.notification_type == 'WARRANTY_EXPIRING' %}alert-triangle{% else %}bell{% endif %}" 
                            class="w-6 h-6 
                         {% if notification.priority == 'CRITICAL' %}text-red-600
@@ -42,7 +41,9 @@
                 <div class="flex-1 min-w-0">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-1">{{ notification.title }}</h3>
+                            <a href="{% url 'notifications:detail' notification.id %}" class="block">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-1 hover:underline" style="color: var(--primary-color);">{{ notification.title }}</h3>
+                            </a>
                             <p class="text-gray-600 mb-3">{{ notification.message }}</p>
 
                             <div class="flex flex-wrap items-center gap-3">
@@ -70,11 +71,11 @@
 
                         <div class="flex items-center gap-2 ml-4">
                             {% if not notification.is_read %}
-                            <button onclick="markAsRead('{{ notification.id }}')" class="p-2 rounded-lg transition-colors" style="color: var(--primary-color); hover:background-color: rgba(var(--primary-color-rgb, 59, 130, 246), 0.1);" title="Mark as read">
+                            <button onclick="markAsRead('{{ notification.id }}')" class="p-2 rounded-lg transition-colors" style="color: var(--primary-color);" title="Mark as read">
                                 <i data-lucide="check" class="w-4 h-4"></i>
                             </button>
                             {% endif %}
-                            <button onclick="deleteNotification('{{ notification.id }}')" class="text-gray-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors" title="Delete">
+                            <button onclick="confirmDelete('{{ notification.id }}')" class="text-gray-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors" title="Delete">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                             </button>
                         </div>
@@ -138,7 +139,71 @@
     {% endif %}
 </div>
 
+<!-- Confirm Delete Modal -->
+<div id="confirmDeleteModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 m-4">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                    <i data-lucide="trash-2" class="w-6 h-6 text-red-600"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">Delete Notification</h3>
+                    <p class="text-sm text-slate-500">This action cannot be undone</p>
+                </div>
+            </div>
+            <p class="text-slate-600 mb-6">Are you sure you want to delete this notification? This action cannot be undone.</p>
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" class="flex-1 py-3 rounded-xl font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+                <button onclick="deleteNotification()" class="flex-1 py-3 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+let pendingDeleteId = null;
+
+function confirmDelete(notificationId) {
+    pendingDeleteId = notificationId;
+    document.getElementById('confirmDeleteModal').classList.remove('hidden');
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
+function closeDeleteModal() {
+    document.getElementById('confirmDeleteModal').classList.add('hidden');
+    pendingDeleteId = null;
+}
+
+function deleteNotification() {
+    if (!pendingDeleteId) return;
+    const notificationId = pendingDeleteId;
+    closeDeleteModal();
+    
+    fetch(`/notifications/delete/${notificationId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            showToast('Error deleting notification', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred', 'error');
+    });
+}
+
 // Mark single notification as read
 function markAsRead(notificationId) {
     fetch(`/notifications/mark-read/${notificationId}/`, {
@@ -185,31 +250,7 @@ function markAllAsRead() {
     });
 }
 
-// Delete notification
-function deleteNotification(notificationId) {
-    if (!confirm('Are you sure you want to delete this notification?')) return;
-    fetch(`/notifications/delete/${notificationId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            location.reload();
-        } else {
-            showToast('Error deleting notification', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred', 'error');
-    });
-}
-
-// Toast notification function (matching base.html style)
+// Toast notification function
 function showToast(message, type = 'success') {
     const toastContainer = document.body;
     const toast = document.createElement('div');

@@ -19,6 +19,10 @@ urlpatterns = [
     path('equipment/<uuid:pk>/status/',
          views.EquipmentStatusUpdateView.as_view(), name='update_status'),
 
+    # Bulk actions and export
+    path('equipment/bulk-action/', views.EquipmentBulkActionView.as_view(), name='equipment_bulk_action'),
+    path('equipment/export/', views.EquipmentExportView.as_view(), name='equipment_export'),
+
     # Vendor CRUD
     path('vendors/', views.VendorListView.as_view(), name='vendor_list'),
     path('vendors/<uuid:pk>/', views.VendorDetailView.as_view(), name='vendor_detail'),

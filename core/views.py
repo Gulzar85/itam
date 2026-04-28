@@ -146,7 +146,7 @@ class GlobalSearchView(LoginRequiredMixin, View):
                 'icon_bg': 'bg-blue-100',
             })
 
-        if user_role in [User.IS_IT_ADMIN, User.IS_MANAGER] or user.is_staff:
+        if user.is_staff or getattr(user, 'can_approve', False):
             from requests.models import Assignment
             assignments = Assignment.objects.filter(
                 models.Q(equipment__serial_number__icontains=query) |
@@ -168,7 +168,7 @@ class GlobalSearchView(LoginRequiredMixin, View):
         # Search Requests (role-based visibility)
         requests_qs = Request.objects.all()
         if not user.is_staff and user_role != User.IS_IT_ADMIN:
-            if user_role == User.IS_MANAGER:
+            if getattr(user, 'can_approve', False):
                 requests_qs = requests_qs.filter(models.Q(user=user) | models.Q(user__manager=user))
             else:
                 requests_qs = requests_qs.filter(user=user)
@@ -243,7 +243,7 @@ class GlobalSearchView(LoginRequiredMixin, View):
                 })
 
         # Search Users (for IT_ADMIN and Managers)
-        if user_role == User.IS_IT_ADMIN or user.is_staff or user_role == User.IS_MANAGER:
+        if user.is_staff or user_role == User.IS_IT_ADMIN or getattr(user, 'can_approve', False):
             users = User.objects.filter(
                 models.Q(username__icontains=query) |
                 models.Q(first_name__icontains=query) |

@@ -18,14 +18,12 @@ class Department(models.Model):
 
 
 class User(AbstractUser):
-    # Role Constants
+    # Role Constants - Only EMPLOYEE or IT_ADMIN
     IS_EMPLOYEE = 'EMPLOYEE'
-    IS_MANAGER = 'MANAGER'
     IS_IT_ADMIN = 'IT_ADMIN'
 
     ROLE_CHOICES = [
         (IS_EMPLOYEE, 'Employee'),
-        (IS_MANAGER, 'Manager'),
         (IS_IT_ADMIN, 'IT Admin'),
     ]
 
@@ -33,7 +31,9 @@ class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     role = models.CharField(
         max_length=20, choices=ROLE_CHOICES, default=IS_EMPLOYEE)
-    # 'self' means a user points to another user as their manager.
+    
+    # employee -> manager relationship
+    # manager can approve their direct reports' requests
     manager = models.ForeignKey(
         'self',
         on_delete=models.SET_NULL,
@@ -51,6 +51,11 @@ class User(AbstractUser):
         return f"{self.username} ({self.role})"
 
     @property
-    def is_line_manager(self):
-        """Check if this user manages anyone"""
-        return getattr(self, 'team_members').exists()
+    def is_manager(self):
+        """Check if this user is a manager (has team members reporting to them)"""
+        return self.team_members.exists()
+
+    @property
+    def can_approve(self):
+        """Check if this user can approve requests - true if they are a manager with team members"""
+        return self.is_manager or self.role == self.IS_IT_ADMIN

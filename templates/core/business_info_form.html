@@ -2,28 +2,51 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
-    <div class="mb-8">
-        <div class="flex items-center gap-4 mb-4">
-            <a href="{% url 'core:business_info' %}" class="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100">
+    <!-- Header with gradient -->
+    <div class="mb-8 -mx-6 -mt-6 px-6 py-6 rounded-t-xl" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 80%, white) 100%);">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'core:business_info' %}" class="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors">
                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
             </a>
             <div>
-                <h1 class="text-3xl font-bold text-gray-800">Edit Business Information</h1>
-                <p class="text-gray-600">Update your organization's details</p>
+                <h1 class="text-3xl font-bold text-white">Business Information</h1>
+                <p class="text-white/80">Update your organization's details</p>
             </div>
         </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border p-8">
-        <form method="post" enctype="multipart/form-data" class="space-y-6">
+    <div class="bg-white rounded-xl shadow-lg border p-8">
+        <form method="post" enctype="multipart/form-data" class="space-y-8">
             {% csrf_token %}
 
+            <!-- Logo Preview -->
+            <div class="flex items-center gap-6 pb-6 border-b">
+                {% if form.instance.logo %}
+                <img src="{{ form.instance.logo.url }}" class="w-20 h-20 rounded-xl object-cover ring-2 ring-gray-100">
+                {% else %}
+                <div class="w-20 h-20 rounded-xl bg-gray-100 flex items-center justify-center">
+                    <i data-lucide="building-2" class="w-8 h-8 text-gray-400"></i>
+                </div>
+                {% endif %}
+                <div class="flex-1">
+                    <label for="{{ form.logo.id_for_label }}" class="block text-sm font-semibold text-gray-700">
+                        {{ form.logo.label }}
+                    </label>
+                    {{ form.logo }}
+                    <p class="text-xs text-gray-500 mt-1">{{ form.logo.help_text }}</p>
+                </div>
+            </div>
+
+            <!-- Basic Information -->
             <div class="space-y-4">
-                <h2 class="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">Basic Information</h2>
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <i data-lucide="info" class="w-5 h-5" style="color: var(--primary-color);"></i>
+                    Basic Information
+                </h2>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <div class="space-y-2">
+                        <label for="{{ form.name.id_for_label }}" class="block text-sm font-semibold text-gray-700">
                             {{ form.name.label }}
                         </label>
                         {{ form.name }}
@@ -32,19 +55,19 @@
                         {% endif %}
                     </div>
 
-                    <div>
-                        <label for="{{ form.logo.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ form.logo.label }}
+                    <div class="space-y-2">
+                        <label for="{{ form.website.id_for_label }}" class="block text-sm font-semibold text-gray-700">
+                            {{ form.website.label }}
                         </label>
-                        {{ form.logo }}
-                        {% if form.logo.errors %}
-                            <p class="mt-1 text-sm text-red-600">{{ form.logo.errors.0 }}</p>
+                        {{ form.website }}
+                        {% if form.website.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.website.errors.0 }}</p>
                         {% endif %}
                     </div>
                 </div>
 
-                <div>
-                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                <div class="space-y-2">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-700">
                         {{ form.description.label }}
                     </label>
                     {{ form.description }}
@@ -53,8 +76,8 @@
                     {% endif %}
                 </div>
 
-                <div>
-                    <label for="{{ form.address.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                <div class="space-y-2">
+                    <label for="{{ form.address.id_for_label }}" class="block text-sm font-semibold text-gray-700">
                         {{ form.address.label }}
                     </label>
                     {{ form.address }}
@@ -64,12 +87,16 @@
                 </div>
             </div>
 
+            <!-- Contact Information -->
             <div class="space-y-4">
-                <h2 class="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">Contact Information</h2>
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <i data-lucide="phone" class="w-5 h-5" style="color: var(--primary-color);"></i>
+                    Contact Information
+                </h2>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="{{ form.contact_email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <div class="space-y-2">
+                        <label for="{{ form.contact_email.id_for_label }}" class="block text-sm font-semibold text-gray-700">
                             {{ form.contact_email.label }}
                         </label>
                         {{ form.contact_email }}
@@ -78,8 +105,8 @@
                         {% endif %}
                     </div>
 
-                    <div>
-                        <label for="{{ form.contact_phone.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <div class="space-y-2">
+                        <label for="{{ form.contact_phone.id_for_label }}" class="block text-sm font-semibold text-gray-700">
                             {{ form.contact_phone.label }}
                         </label>
                         {{ form.contact_phone }}
@@ -87,62 +114,77 @@
                             <p class="mt-1 text-sm text-red-600">{{ form.contact_phone.errors.0 }}</p>
                         {% endif %}
                     </div>
-
-                    <div>
-                        <label for="{{ form.website.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                            {{ form.website.label }}
-                        </label>
-                        {{ form.website }}
-                        {% if form.website.errors %}
-                            <p class="mt-1 text-sm text-red-600">{{ form.website.errors.0 }}</p>
-                        {% endif %}
-                    </div>
                 </div>
             </div>
 
+            <!-- Branding Colors -->
             <div class="space-y-4">
-                <h2 class="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">Branding</h2>
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <i data-lucide="palette" class="w-5 h-5" style="color: var(--primary-color);"></i>
+                    Branding Colors
+                </h2>
+                <p class="text-sm text-gray-500 mb-4">McDonald's Pakistan theme: Primary (#DA291C), Secondary (#FFC72C), Accent (#FFBD0A)</p>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label for="{{ form.primary_color.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <div class="space-y-2">
+                        <label for="{{ form.primary_color.id_for_label }}" class="block text-sm font-semibold text-gray-700">
                             {{ form.primary_color.label }}
                         </label>
-                        {{ form.primary_color }}
+                        <div class="flex items-center gap-3">
+                            <input type="color" id="primary_color_preview" value="{{ form.primary_color.value|default:'#DA291C' }}" class="w-12 h-12 rounded-lg cursor-pointer border-0">
+                            {{ form.primary_color }}
+                        </div>
                         {% if form.primary_color.errors %}
                             <p class="mt-1 text-sm text-red-600">{{ form.primary_color.errors.0 }}</p>
                         {% endif %}
                     </div>
 
-                    <div>
-                        <label for="{{ form.secondary_color.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <div class="space-y-2">
+                        <label for="{{ form.secondary_color.id_for_label }}" class="block text-sm font-semibold text-gray-700">
                             {{ form.secondary_color.label }}
                         </label>
-                        {{ form.secondary_color }}
+                        <div class="flex items-center gap-3">
+                            <input type="color" id="secondary_color_preview" value="{{ form.secondary_color.value|default:'#FFC72C' }}" class="w-12 h-12 rounded-lg cursor-pointer border-0">
+                            {{ form.secondary_color }}
+                        </div>
                         {% if form.secondary_color.errors %}
                             <p class="mt-1 text-sm text-red-600">{{ form.secondary_color.errors.0 }}</p>
                         {% endif %}
                     </div>
 
-                    <div class="flex items-center space-x-3">
-                        <div class="flex items-center">
-                            {{ form.is_active }}
-                            <label for="{{ form.is_active.id_for_label }}" class="ml-2 text-sm font-medium text-gray-700">
-                                {{ form.is_active.label }}
-                            </label>
+                    <div class="space-y-2">
+                        <label for="{{ form.accent_color.id_for_label }}" class="block text-sm font-semibold text-gray-700">
+                            {{ form.accent_color.label }}
+                        </label>
+                        <div class="flex items-center gap-3">
+                            <input type="color" id="accent_color_preview" value="{{ form.accent_color.value|default:'#FFBD0A' }}" class="w-12 h-12 rounded-lg cursor-pointer border-0">
+                            {{ form.accent_color }}
                         </div>
-                        {% if form.is_active.errors %}
-                            <p class="mt-1 text-sm text-red-600">{{ form.is_active.errors.0 }}</p>
+                        {% if form.accent_color.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.accent_color.errors.0 }}</p>
                         {% endif %}
                     </div>
                 </div>
             </div>
 
+            <!-- Active Status -->
+            <div class="flex items-center gap-3 p-4 rounded-xl bg-gray-50">
+                {{ form.is_active }}
+                <label for="{{ form.is_active.id_for_label }}" class="text-sm font-medium text-gray-700">
+                    {{ form.is_active.label }}
+                </label>
+                {% if form.is_active.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.is_active.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Form Actions -->
             <div class="flex gap-4 pt-6 border-t">
-                <button type="submit" class="text-white px-6 py-3 rounded-lg hover:opacity-90 transition-colors font-medium" style="background-color: var(--primary-color);">
+                <button type="submit" class="text-white px-6 py-3 rounded-xl hover:opacity-90 transition-all font-medium shadow-lg" style="background-color: var(--primary-color);">
+                    <i data-lucide="save" class="w-4 h-4 inline mr-2"></i>
                     Save Changes
                 </button>
-                <a href="{% url 'core:business_info' %}" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors font-medium">
+                <a href="{% url 'core:business_info' %}" class="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-200 transition-all font-medium">
                     Cancel
                 </a>
             </div>
@@ -150,7 +192,53 @@
     </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const primaryColor = document.getElementById('id_primary_color');
+    const secondaryColor = document.getElementById('id_secondary_color');
+    const accentColor = document.getElementById('id_accent_color');
+    
+    const primaryPreview = document.getElementById('primary_color_preview');
+    const secondaryPreview = document.getElementById('secondary_color_preview');
+    const accentPreview = document.getElementById('accent_color_preview');
+    
+    if(primaryColor && primaryPreview) {
+        primaryPreview.value = primaryColor.value || '#DA291C';
+        primaryColor.addEventListener('input', function() {
+            primaryPreview.value = this.value;
+        });
+    }
+    if(secondaryColor && secondaryPreview) {
+        secondaryPreview.value = secondaryColor.value || '#FFC72C';
+        secondaryColor.addEventListener('input', function() {
+            secondaryPreview.value = this.value;
+        });
+    }
+    if(accentColor && accentPreview) {
+        accentPreview.value = accentColor.value || '#FFBD0A';
+        accentColor.addEventListener('input', function() {
+            accentPreview.value = this.value;
+        });
+    }
+    
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+});
+</script>
+
 <style>
+    input[type="color"] {
+        -webkit-appearance: none;
+        padding: 0;
+    }
+    input[type="color"]::-webkit-color-swatch-wrapper {
+        padding: 2px;
+    }
+    input[type="color"]::-webkit-color-swatch {
+        border: none;
+        border-radius: 8px;
+    }
     input, select, textarea {
         width: 100%;
         padding: 0.75rem;
@@ -160,18 +248,9 @@
         transition: all 0.2s ease;
         background-color: rgba(255, 255, 255, 0.5);
     }
-    
     input:focus, select:focus, textarea:focus {
         border-color: var(--primary-color);
         box-shadow: 0 0 0 3px var(--primary-color-alpha);
-    }
-    
-    label {
-        display: block;
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: #374151;
-        margin-bottom: 0.5rem;
     }
 </style>
 {% endblock %}

@@ -1,121 +1,123 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container-fluid mx-auto px-4 py-8">
-    <!-- Header Section -->
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
-        <div>
-            <h1 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">
-                Dashboard
-            </h1>
-        </div>
-        
-        <div class="flex items-center gap-3">
-            <a href="{% url 'requests:create' %}" class="text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg transition-all hover:-translate-y-0.5 active:scale-95" style="background-color: var(--primary-color);">
-                <i data-lucide="plus-circle" class="w-5 h-5"></i>
-                New Request
-            </a>
+<div class="max-w-7xl mx-auto">
+    <!-- Header with gradient -->
+    <div class="mb-8 -mx-6 -mt-6 px-6 py-8 rounded-t-xl" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 80%, white) 100%);">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="text-white">
+                <h1 class="text-3xl md:text-4xl font-bold tracking-tight">
+                    Dashboard
+                </h1>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <a href="{% url 'requests:create' %}" class="text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-lg transition-all hover:opacity-90" style="background-color: var(--primary-color);">
+                    <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                    New Request
+                </a>
+            </div>
         </div>
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 -mt-6 relative">
+        <div class="bg-white rounded-2xl p-6 shadow-lg border">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: var(--primary-color);">
                     <i data-lucide="clipboard-list" class="w-6 h-6 text-white"></i>
                 </div>
-                <span class="text-3xl font-black text-slate-800">{{ stats.total }}</span>
+                <span class="text-3xl font-bold text-gray-800">{{ stats.total }}</span>
             </div>
-            <p class="text-sm font-medium text-slate-500">Total Requests</p>
+            <p class="text-sm font-medium text-gray-500">Total Requests</p>
         </div>
 
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div class="bg-white rounded-2xl p-6 shadow-lg border">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
                     <i data-lucide="clock" class="w-6 h-6 text-amber-600"></i>
                 </div>
-                <span class="text-3xl font-black text-slate-800">{{ stats.pending }}</span>
+                <span class="text-3xl font-bold text-gray-800">{{ stats.pending }}</span>
             </div>
-            <p class="text-sm font-medium text-slate-500">Pending Approval</p>
+            <p class="text-sm font-medium text-gray-500">Pending Approval</p>
         </div>
 
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div class="bg-white rounded-2xl p-6 shadow-lg border">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                     <i data-lucide="refresh-cw" class="w-6 h-6 text-blue-600"></i>
                 </div>
-                <span class="text-3xl font-black text-slate-800">{{ stats.in_progress }}</span>
+                <span class="text-3xl font-bold text-gray-800">{{ stats.in_progress }}</span>
             </div>
-            <p class="text-sm font-medium text-slate-500">In Progress</p>
+            <p class="text-sm font-medium text-gray-500">In Progress</p>
         </div>
 
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div class="bg-white rounded-2xl p-6 shadow-lg border">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
                     <i data-lucide="check-circle" class="w-6 h-6 text-emerald-600"></i>
                 </div>
-                <span class="text-3xl font-black text-slate-800">{{ stats.completed }}</span>
+                <span class="text-3xl font-bold text-gray-800">{{ stats.completed }}</span>
             </div>
-            <p class="text-sm font-medium text-slate-500">Completed</p>
+            <p class="text-sm font-medium text-gray-500">Completed</p>
         </div>
     </div>
 
     <!-- Recent Activity -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div class="bg-white rounded-2xl shadow-sm border overflow-hidden">
+        <div class="p-5 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--primary-color);">
                     <i data-lucide="activity" class="w-5 h-5 text-white"></i>
                 </div>
                 <div>
-                    <h2 class="text-lg font-bold text-slate-800">Recent Requests</h2>
-                    <p class="text-xs text-slate-500">Latest IT requests</p>
+                    <h2 class="text-lg font-semibold text-gray-800">Recent Requests</h2>
+                    <p class="text-xs text-gray-500">Latest IT requests</p>
                 </div>
             </div>
             
             <div class="relative w-full sm:w-64">
-                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
                 <input type="text" id="tableSearch" placeholder="Search..." 
-                    class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm">
+                    class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm">
             </div>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full text-left">
                 <thead>
-                    <tr class="bg-slate-50/50">
-                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">ID</th>
-                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">User</th>
-                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Type</th>
-                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Priority</th>
-                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
-                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Date</th>
-                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Actions</th>
+                    <tr class="bg-gray-50">
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-left">ID</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-left">User</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-left">Type</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-left">Priority</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-left">Status</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-left">Date</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody class="divide-y divide-gray-100">
                     {% for req in requests %}
                     <tr id="request-{{ req.id }}" 
-                        class="hover:bg-slate-50 cursor-pointer transition-all duration-200 hover:shadow-sm" 
+                        class="hover:bg-gray-50 cursor-pointer transition-all"
                         onclick="window.location.href='{% url 'requests:detail' req.id %}'">
                         
                         <td class="px-6 py-4">
                             <span class="font-mono text-sm font-semibold px-3 py-1.5 rounded-lg inline-block"
-                                  style="color: var(--primary-color); background-color: rgba(59, 130, 246, 0.1);">
+                                  style="color: var(--primary-color); background-color: color-mix(in srgb, var(--primary-color) 10%, white);">
                                 #{{ req.request_id }}
                             </span>
                         </td>
 
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-lg flex items-center justify-center font-semibold text-sm transition-colors"
-                                     style="background-color: rgba(59, 130, 246, 0.1); color: var(--primary-color);">
+                                <div class="w-9 h-9 rounded-lg flex items-center justify-center font-semibold text-sm"
+                                     style="background-color: color-mix(in srgb, var(--primary-color) 10%, white); color: var(--primary-color);">
                                     {{ req.user.username|first|upper }}
                                 </div>
                                 <div>
-                                    <span class="font-medium text-slate-700 block">{{ req.user.get_full_name|default:req.user.username }}</span>
-                                    <span class="text-xs text-slate-400">{{ req.user.department.name|default:'' }}</span>
+                                    <span class="font-medium text-gray-700 block">{{ req.user.get_full_name|default:req.user.username }}</span>
+                                    <span class="text-xs text-gray-400">{{ req.user.department.name|default:'' }}</span>
                                 </div>
                             </div>
                         </td>
@@ -131,10 +133,10 @@
 
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold uppercase
-                                {% if req.priority == 'CRITICAL' %}bg-rose-100 text-rose-700
+                                {% if req.priority == 'CRITICAL' %}bg-red-100 text-red-700
                                 {% elif req.priority == 'HIGH' %}bg-orange-100 text-orange-700
-                                {% elif req.priority == 'MEDIUM' %}bg-amber-100 text-amber-700
-                                {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                {% elif req.priority == 'MEDIUM' %}bg-yellow-100 text-yellow-700
+                                {% else %}bg-gray-100 text-gray-600{% endif %}">
                                 {{ req.get_priority_display }}
                             </span>
                         </td>
@@ -142,7 +144,7 @@
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold
                                 {% if req.status == 'COMPLETED' %}bg-emerald-100 text-emerald-700
-                                {% elif req.status == 'REJECTED' %}bg-rose-100 text-rose-700
+                                {% elif req.status == 'REJECTED' %}bg-red-100 text-red-700
                                 {% elif req.status == 'IN_PROGRESS' %}bg-blue-100 text-blue-700
                                 {% elif req.status == 'MANAGER_APPROVED' %}bg-indigo-100 text-indigo-700
                                 {% else %}bg-amber-100 text-amber-700{% endif %}">
@@ -151,24 +153,24 @@
                             </span>
                         </td>
 
-                        <td class="px-6 py-4 text-sm text-slate-500">
+                        <td class="px-6 py-4 text-sm text-gray-500">
                             {{ req.created_at|date:"M d, H:i" }}
                         </td>
 
                         <td class="px-6 py-4 text-right">
-                            {% if user.role == 'MANAGER' and req.status == 'PENDING' %}
+                            {% if user.can_approve and req.status == 'PENDING' %}
                                 <div class="flex justify-end gap-2">
                                     <button onclick="event.stopPropagation(); updateStatus('{{ req.id }}', 'MANAGER_APPROVED')"
                                             class="w-8 h-8 flex items-center justify-center bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-lg transition-all" title="Approve">
                                         <i data-lucide="check" class="w-4 h-4"></i>
                                     </button>
                                     <button onclick="event.stopPropagation(); updateStatus('{{ req.id }}', 'REJECTED')"
-                                            class="w-8 h-8 flex items-center justify-center bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg transition-all" title="Reject">
+                                            class="w-8 h-8 flex items-center justify-center bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-all" title="Reject">
                                         <i data-lucide="x" class="w-4 h-4"></i>
                                     </button>
                                 </div>
                             {% else %}
-                                <button class="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
+                                <button class="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all">
                                     <i data-lucide="chevron-right" class="w-5 h-5"></i>
                                 </button>
                             {% endif %}
@@ -178,10 +180,10 @@
                     <tr>
                         <td colspan="7" class="px-6 py-12 text-center">
                             <div class="flex flex-col items-center">
-                                <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                                    <i data-lucide="inbox" class="w-8 h-8 text-slate-300"></i>
+                                <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                                    <i data-lucide="inbox" class="w-8 h-8 text-gray-300"></i>
                                 </div>
-                                <p class="text-slate-500 font-medium">No requests found</p>
+                                <p class="text-gray-500 font-medium">No requests found</p>
                                 <a href="{% url 'requests:create' %}" class="mt-3 text-sm font-medium" style="color: var(--primary-color);">
                                     Create your first request
                                 </a>
@@ -194,20 +196,20 @@
         </div>
 
         {% if is_paginated %}
-        <div class="p-4 border-t border-slate-100 flex justify-center">
+        <div class="p-4 border-t flex justify-center">
             <nav class="flex items-center gap-1">
                 {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}" class="p-2 rounded-lg hover:bg-slate-100 text-slate-600">
+                <a href="?page={{ page_obj.previous_page_number }}" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
                     <i data-lucide="chevron-left" class="w-5 h-5"></i>
                 </a>
                 {% endif %}
                 
-                <span class="px-4 py-2 text-sm font-medium text-slate-600">
+                <span class="px-4 py-2 text-sm font-medium text-gray-600">
                     Page {{ page_obj.number }} of {{ paginator.num_pages }}
                 </span>
                 
                 {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="p-2 rounded-lg hover:bg-slate-100 text-slate-600">
+                <a href="?page={{ page_obj.next_page_number }}" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
                     <i data-lucide="chevron-right" class="w-5 h-5"></i>
                 </a>
                 {% endif %}

@@ -1,11 +1,12 @@
-from equipment.models import Equipment, Category, Brand, Vendor, MaintenanceRecord
-from django.db.models.functions import TruncMonth, Coalesce
-from django.db.models import Sum, Count
-from django.views.generic import TemplateView
-from django.db.models import Sum, Count, Q
+import csv
 import json
 from datetime import datetime, timedelta
-from django.utils.timezone import make_aware
+from typing import Any
+
+from django.db.models import Sum
+from django.db.models.functions import Coalesce
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.messages.views import SuccessMessageMixin
 from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncMonth
@@ -13,34 +14,20 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
-from django.utils.timezone import now
-from requests.models import Request
+from django.utils.timezone import make_aware, now
 from django.views import View
 from django.views.generic import (
-    CreateView,
-    DeleteView,
-    DetailView,
-    ListView,
-    TemplateView,
-    UpdateView,
+    CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 )
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.messages.views import SuccessMessageMixin
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
+
+from services.permissions import ITAdminRequiredMixin
 
 from requests.models import Request
 from requests.utils import get_advanced_dashboard_stats
 
 from .forms import BrandForm, CategoryForm, EquipmentForm, VendorForm
-from .models import (
-    Brand,
-    Category,
-    Equipment,
-    EquipmentLog,
-    MaintenanceRecord,
-    Vendor,
-)
+from .models import Brand, Category, Equipment, EquipmentLog, MaintenanceRecord, Vendor
+from equipment.models import Category  # noqa: F401
 
 
 class EquipmentListView(LoginRequiredMixin, ListView):
@@ -139,7 +126,7 @@ class EquipmentDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class EquipmentCreateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, CreateView):
+class EquipmentCreateView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageMixin, CreateView):
     """Create new equipment"""
     model = Equipment
     form_class = EquipmentForm
@@ -147,16 +134,13 @@ class EquipmentCreateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessag
     success_url = reverse_lazy('equipment:equipment_list')
     success_message = "Equipment has been created successfully!"
 
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
-
     def form_valid(self, form):
         if not form.cleaned_data.get('status'):
             form.instance.status = 'AVAILABLE'
         return super().form_valid(form)
 
 
-class EquipmentUpdateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, UpdateView):
+class EquipmentUpdateView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageMixin, UpdateView):
     """Update existing equipment"""
     model = Equipment
     form_class = EquipmentForm
@@ -164,27 +148,76 @@ class EquipmentUpdateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessag
     success_url = reverse_lazy('equipment:equipment_list')
     success_message = "Equipment has been updated successfully!"
 
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
 
-
-class EquipmentDeleteView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, DeleteView):
+class EquipmentDeleteView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageMixin, DeleteView):
     """Delete equipment"""
     model = Equipment
     template_name = 'equipment/equipment_confirm_delete.html'
     success_url = reverse_lazy('equipment:equipment_list')
     success_message = "Equipment has been deleted successfully!"
 
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
+
+class EquipmentBulkActionView(LoginRequiredMixin, ITAdminRequiredMixin, View):
+    """Handle bulk actions on equipment"""
+
+    def post(self, request):
+        action = request.POST.get('action')
+        equipment_ids = request.POST.getlist('equipment_ids')
+
+        if not action or not equipment_ids:
+            return JsonResponse({'status': 'error', 'message': 'Missing action or equipment IDs'}, status=400)
+
+        try:
+            equipment_qs = Equipment.objects.filter(id__in=equipment_ids)
+
+            if action == 'mark_damaged':
+                count = equipment_qs.update(status='DAMAGED')
+                return JsonResponse({'status': 'success', 'message': f'{count} items marked as damaged'})
+            elif action == 'mark_available':
+                count = equipment_qs.filter(status='REPAIRING').update(status='AVAILABLE')
+                return JsonResponse({'status': 'success', 'message': f'{count} items marked as available'})
+            elif action == 'delete':
+                count = equipment_qs.delete()[0]
+                return JsonResponse({'status': 'success', 'message': f'{count} items deleted'})
+
+            return JsonResponse({'status': 'error', 'message': 'Invalid action'}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
-class EquipmentStatusUpdateView(LoginRequiredMixin, UserPassesTestMixin, View):
+class EquipmentExportView(LoginRequiredMixin, ITAdminRequiredMixin, View):
+    """Export equipment list to CSV"""
+
+    def get(self, request):
+        import csv
+        from django.http import HttpResponse
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="equipment_export.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Tracking ID', 'Brand', 'Model', 'Serial Number', 'Category', 'Status', 'Assigned To', 'Purchase Date', 'Purchase Cost'])
+
+        equipment = Equipment.objects.select_related('brand', 'category', 'assigned_to').all()
+
+        for eq in equipment:
+            writer.writerow([
+                eq.tracking_id,
+                eq.brand.name if eq.brand else '',
+                eq.model_number,
+                eq.serial_number,
+                eq.category.name if eq.category else '',
+                eq.get_status_display(),
+                eq.assigned_to.get_full_name() if eq.assigned_to else '',
+                eq.purchase_date.strftime('%Y-%m-%d') if eq.purchase_date else '',
+                float(eq.purchase_cost) if eq.purchase_cost else 0,
+            ])
+
+        return response
+
+
+class EquipmentStatusUpdateView(LoginRequiredMixin, ITAdminRequiredMixin, View):
     """AJAX endpoint to update equipment status"""
-
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
 
     def post(self, request, pk):
         equipment = get_object_or_404(Equipment, pk=pk)
@@ -222,36 +255,27 @@ class VendorDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'vendor'
 
 
-class VendorCreateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, CreateView):
+class VendorCreateView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageMixin, CreateView):
     model = Vendor
     form_class = VendorForm
     template_name = 'equipment/vendor_form.html'
     success_url = reverse_lazy('equipment:vendor_list')
     success_message = "Vendor has been created successfully!"
 
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
 
-
-class VendorUpdateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, UpdateView):
+class VendorUpdateView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageMixin, UpdateView):
     model = Vendor
     form_class = VendorForm
     template_name = 'equipment/vendor_form.html'
     success_url = reverse_lazy('equipment:vendor_list')
     success_message = "Vendor has been updated successfully!"
 
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
 
-
-class VendorDeleteView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, DeleteView):
+class VendorDeleteView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageMixin, DeleteView):
     model = Vendor
     template_name = 'equipment/vendor_confirm_delete.html'
     success_url = reverse_lazy('equipment:vendor_list')
     success_message = "Vendor has been deleted successfully!"
-
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
 
 
 # Brand Views
@@ -282,36 +306,27 @@ class BrandDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class BrandCreateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, CreateView):
+class BrandCreateView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageMixin, CreateView):
     model = Brand
     form_class = BrandForm
     template_name = 'equipment/brand_form.html'
     success_url = reverse_lazy('equipment:brand_list')
     success_message = "Brand has been created successfully!"
 
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
 
-
-class BrandUpdateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, UpdateView):
+class BrandUpdateView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageMixin, UpdateView):
     model = Brand
     form_class = BrandForm
     template_name = 'equipment/brand_form.html'
     success_url = reverse_lazy('equipment:brand_list')
     success_message = "Brand has been updated successfully!"
 
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
 
-
-class BrandDeleteView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, DeleteView):
+class BrandDeleteView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageMixin, DeleteView):
     model = Brand
     template_name = 'equipment/brand_confirm_delete.html'
     success_url = reverse_lazy('equipment:brand_list')
     success_message = "Brand has been deleted successfully!"
-
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
 
 
 # Category Views
@@ -343,43 +358,31 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class CategoryCreateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, CreateView):
+class CategoryCreateView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageMixin, CreateView):
     model = Category
     form_class = CategoryForm
     template_name = 'equipment/category_form.html'
     success_url = reverse_lazy('equipment:category_list')
     success_message = "Category has been created successfully!"
 
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
 
-
-class CategoryUpdateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, UpdateView):
+class CategoryUpdateView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageMixin, UpdateView):
     model = Category
     form_class = CategoryForm
     template_name = 'equipment/category_form.html'
     success_url = reverse_lazy('equipment:category_list')
     success_message = "Category has been updated successfully!"
 
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
 
-
-class CategoryDeleteView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, DeleteView):
+class CategoryDeleteView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageMixin, DeleteView):
     model = Category
     template_name = 'equipment/category_confirm_delete.html'
     success_url = reverse_lazy('equipment:category_list')
     success_message = "Category has been deleted successfully!"
 
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
 
-
-class DashboardReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class DashboardReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView):
     template_name = 'dashboard/reports.html'
-
-    def test_func(self):
-        return hasattr(self.request.user, 'role') and self.request.user.role == 'IT_ADMIN'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -522,11 +525,8 @@ class DashboardReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
 
 from django.utils.timezone import now as utc_now
 
-class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class ComprehensiveReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView):
     template_name = 'reports/comprehensive.html'
-
-    def test_func(self):
-        return hasattr(self.request.user, 'role') and self.request.user.role == 'IT_ADMIN'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -644,11 +644,8 @@ class ComprehensiveReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
         return context
 
 
-class MaintenanceHistoryReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class MaintenanceHistoryReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView):
     template_name = 'reports/maintenance_history.html'
-
-    def test_func(self):
-        return hasattr(self.request.user, 'role') and self.request.user.role == 'IT_ADMIN'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -737,11 +734,8 @@ class MaintenanceHistoryReportView(LoginRequiredMixin, UserPassesTestMixin, Temp
         return context
 
 
-class RequestSummaryReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class RequestSummaryReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView):
     template_name = 'reports/request_summary.html'
-
-    def test_func(self):
-        return hasattr(self.request.user, 'role') and self.request.user.role == 'IT_ADMIN'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -825,11 +819,8 @@ class RequestSummaryReportView(LoginRequiredMixin, UserPassesTestMixin, Template
         return context
 
 
-class VendorPerformanceReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class VendorPerformanceReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView):
     template_name = 'reports/vendor_performance.html'
-
-    def test_func(self):
-        return hasattr(self.request.user, 'role') and self.request.user.role == 'IT_ADMIN'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -905,11 +896,8 @@ class VendorPerformanceReportView(LoginRequiredMixin, UserPassesTestMixin, Templ
         return context
 
 
-class DepartmentDistributionReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class DepartmentDistributionReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView):
     template_name = 'reports/department_distribution.html'
-
-    def test_func(self):
-        return hasattr(self.request.user, 'role') and self.request.user.role == 'IT_ADMIN'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -969,11 +957,8 @@ class DepartmentDistributionReportView(LoginRequiredMixin, UserPassesTestMixin, 
         return context
 
 
-class RequestTurnaroundReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class RequestTurnaroundReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView):
     template_name = 'reports/request_turnaround.html'
-
-    def test_func(self):
-        return hasattr(self.request.user, 'role') and self.request.user.role == 'IT_ADMIN'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

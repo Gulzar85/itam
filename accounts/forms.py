@@ -9,7 +9,7 @@ class UserProfileForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'phone_number', 'department']
+        fields = ['first_name', 'last_name', 'email', 'phone_number', 'department', 'manager']
         widgets = {
             'first_name': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
@@ -30,6 +30,9 @@ class UserProfileForm(forms.ModelForm):
             'department': forms.Select(attrs={
                 'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
             }),
+            'manager': forms.Select(attrs={
+                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
+            }),
         }
         labels = {
             'first_name': 'First Name',
@@ -37,13 +40,15 @@ class UserProfileForm(forms.ModelForm):
             'email': 'Email Address',
             'phone_number': 'Phone Number',
             'department': 'Department',
+            'manager': 'Line Manager',
         }
         help_texts = {
             'first_name': 'Your given name',
             'last_name': 'Your family name',
             'email': 'Your email address for notifications',
-            'phone_number': 'Your contact number (optional)',
+            'phone_number': 'Contact number with country code (e.g., +923123456789)',
             'department': 'Your department within the organization',
+            'manager': 'Your direct reporting manager',
         }
 
     def __init__(self, *args, **kwargs):
@@ -52,6 +57,8 @@ class UserProfileForm(forms.ModelForm):
         self.helper.form_tag = False
         self.fields['email'].required = True
         self.fields['department'].required = False
+        self.fields['manager'].required = False
+        self.fields['phone_number'].required = False
 
 
 class UserCreationForm(forms.ModelForm):
@@ -117,7 +124,7 @@ class UserCreationForm(forms.ModelForm):
             'phone_number': 'Phone Number',
         }
         help_texts = {
-            'role': 'EMPLOYEE: Regular staff | MANAGER: Team lead | IT_ADMIN: System administrator',
+            'role': 'EMPLOYEE: Regular staff | IT_ADMIN: System administrator',
             'manager': 'Select the user who will approve this employee\'s requests',
             'phone_number': 'Contact number (optional)',
         }

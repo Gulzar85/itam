@@ -35,14 +35,17 @@ class Command(BaseCommand):
         categories = self.create_categories()
         brands = self.create_brands()
         vendors = self.create_vendors()
-        equipment_list = self.create_equipment(categories, brands, vendors, employees, options['minimal'])
+        equipment_list = self.create_equipment(
+            categories, brands, vendors, employees, options['minimal'])
 
         self.create_business_info()
         self.create_social_media_links()
         self.create_notification_templates()
 
-        requests_list = self.create_requests(employees, categories, brands, vendors, equipment_list, it_admin)
-        maintenance_records = self.create_maintenance_records(requests_list, vendors, equipment_list, it_admin)
+        requests_list = self.create_requests(
+            employees, categories, brands, vendors, equipment_list, it_admin)
+        maintenance_records = self.create_maintenance_records(
+            requests_list, vendors, equipment_list, it_admin)
         self.create_assignments(equipment_list, employees, it_admin)
         self.create_equipment_logs(equipment_list, it_admin)
         self.create_notifications(employees, it_admin, requests_list)
@@ -55,7 +58,7 @@ class Command(BaseCommand):
     def create_departments(self):
         departments = {}
         dept_names = [
-            'IT', 'HR', 'Finance', 'Marketing', 'Operations', 
+            'IT', 'HR', 'Finance', 'Marketing', 'Operations',
             'Sales', 'Engineering', 'Customer Support', 'Legal', 'Research'
         ]
         for name in dept_names:
@@ -82,10 +85,14 @@ class Command(BaseCommand):
 
         managers = []
         manager_data = [
-            ('manager_hr', 'Sarah', 'Johnson', 'manager.hr@company.com', departments['HR']),
-            ('manager_finance', 'Michael', 'Chen', 'manager.finance@company.com', departments['Finance']),
-            ('manager_it', 'David', 'Wilson', 'manager.it@company.com', departments['IT']),
-            ('manager_marketing', 'Emily', 'Davis', 'manager.marketing@company.com', departments['Marketing']),
+            ('manager_hr', 'Sarah', 'Johnson',
+             'manager.hr@company.com', departments['HR']),
+            ('manager_finance', 'Michael', 'Chen',
+             'manager.finance@company.com', departments['Finance']),
+            ('manager_it', 'David', 'Wilson',
+             'manager.it@company.com', departments['IT']),
+            ('manager_marketing', 'Emily', 'Davis',
+             'manager.marketing@company.com', departments['Marketing']),
         ]
         for username, first, last, email, dept in manager_data:
             manager, _ = User.objects.get_or_create(
@@ -94,7 +101,7 @@ class Command(BaseCommand):
                     'email': email,
                     'first_name': first,
                     'last_name': last,
-                    'role': User.IS_MANAGER,
+                    'role': User.IS_EMPLOYEE,
                     'department': dept
                 }
             )
@@ -104,18 +111,30 @@ class Command(BaseCommand):
 
         employees = []
         employee_data = [
-            ('alice', 'Alice', 'Johnson', 'alice@company.com', departments['HR'], managers[0]),
-            ('bob', 'Bob', 'Smith', 'bob@company.com', departments['Finance'], managers[1]),
-            ('charlie', 'Charlie', 'Brown', 'charlie@company.com', departments['Marketing'], managers[0]),
-            ('david', 'David', 'Wilson', 'david@company.com', departments['IT'], managers[2]),
-            ('emma', 'Emma', 'Davis', 'emma@company.com', departments['Sales'], managers[0]),
-            ('frank', 'Frank', 'Miller', 'frank@company.com', departments['Engineering'], managers[2]),
-            ('grace', 'Grace', 'Taylor', 'grace@company.com', departments['Operations'], managers[1]),
-            ('henry', 'Henry', 'Anderson', 'henry@company.com', departments['IT'], managers[2]),
-            ('ivy', 'Ivy', 'Thomas', 'ivy@company.com', departments['Customer Support'], managers[0]),
-            ('jack', 'Jack', 'Robinson', 'jack@company.com', departments['Finance'], managers[1]),
-            ('kate', 'Kate', 'White', 'kate@company.com', departments['Marketing'], managers[3]),
-            ('leo', 'Leo', 'Garcia', 'leo@company.com', departments['Sales'], managers[0]),
+            ('alice', 'Alice', 'Johnson', 'alice@company.com',
+             departments['HR'], managers[0]),
+            ('bob', 'Bob', 'Smith', 'bob@company.com',
+             departments['Finance'], managers[1]),
+            ('charlie', 'Charlie', 'Brown', 'charlie@company.com',
+             departments['Marketing'], managers[0]),
+            ('david', 'David', 'Wilson', 'david@company.com',
+             departments['IT'], managers[2]),
+            ('emma', 'Emma', 'Davis', 'emma@company.com',
+             departments['Sales'], managers[0]),
+            ('frank', 'Frank', 'Miller', 'frank@company.com',
+             departments['Engineering'], managers[2]),
+            ('grace', 'Grace', 'Taylor', 'grace@company.com',
+             departments['Operations'], managers[1]),
+            ('henry', 'Henry', 'Anderson', 'henry@company.com',
+             departments['IT'], managers[2]),
+            ('ivy', 'Ivy', 'Thomas', 'ivy@company.com',
+             departments['Customer Support'], managers[0]),
+            ('jack', 'Jack', 'Robinson', 'jack@company.com',
+             departments['Finance'], managers[1]),
+            ('kate', 'Kate', 'White', 'kate@company.com',
+             departments['Marketing'], managers[3]),
+            ('leo', 'Leo', 'Garcia', 'leo@company.com',
+             departments['Sales'], managers[0]),
         ]
         for username, first, last, email, dept, manager in employee_data:
             emp, _ = User.objects.get_or_create(
@@ -134,7 +153,8 @@ class Command(BaseCommand):
             emp.save()
             employees.append(emp)
 
-        self.stdout.write(f'  Created 1 IT Admin, {len(managers)} managers, {len(employees)} employees')
+        self.stdout.write(
+            f'  Created 1 IT Admin, {len(managers)} managers, {len(employees)} employees')
         return it_admin, managers, employees
 
     def create_categories(self):
@@ -168,14 +188,19 @@ class Command(BaseCommand):
     def create_brands(self):
         brands = {}
         brand_data = [
-            ('Dell', '+1800555010', 'https://dell.com', 'Leading computer hardware manufacturer'),
+            ('Dell', '+1800555010', 'https://dell.com',
+             'Leading computer hardware manufacturer'),
             ('HP', '+1800474100', 'https://hp.com', 'Personal computing solutions'),
-            ('Lenovo', '+1855255960', 'https://lenovo.com', 'Business and consumer laptops'),
-            ('Apple', '+1800697463', 'https://apple.com', 'Premium consumer electronics'),
-            ('Samsung', '+1800726786', 'https://samsung.com', 'Electronics and mobile devices'),
+            ('Lenovo', '+1855255960', 'https://lenovo.com',
+             'Business and consumer laptops'),
+            ('Apple', '+1800697463', 'https://apple.com',
+             'Premium consumer electronics'),
+            ('Samsung', '+1800726786', 'https://samsung.com',
+             'Electronics and mobile devices'),
             ('Logitech', '+1800951202', 'https://logitech.com', 'Computer peripherals'),
             ('Cisco', '+1800553083', 'https://cisco.com', 'Networking equipment'),
-            ('Microsoft', '+1800702600', 'https://microsoft.com', 'Software and hardware'),
+            ('Microsoft', '+1800702600',
+             'https://microsoft.com', 'Software and hardware'),
             ('Asus', '+1800286120', 'https://asus.com', 'Motherboards and laptops'),
             ('Acer', '+18662212273', 'https://acer.com', 'Budget-friendly computers'),
             ('LG', '+1800243000', 'https://lg.com', 'Electronics and displays'),
@@ -190,7 +215,7 @@ class Command(BaseCommand):
             brand, _ = Brand.objects.get_or_create(
                 name=name,
                 defaults={
-                    'support_contact': contact, 
+                    'support_contact': contact,
                     'website': website,
                 }
             )
@@ -201,12 +226,18 @@ class Command(BaseCommand):
     def create_vendors(self):
         vendors = {}
         vendor_data = [
-            ('Tech Solutions Inc.', 'Mike Johnson', '+1234567890', 'mike@techsolutions.com', 'BOTH', 5, '123 Tech Street, Silicon Valley, CA'),
-            ('Global Electronics', 'Sarah Davis', '+1234567891', 'sarah@globalelec.com', 'SUPPLIER', 4, '456 Commerce Ave, New York, NY'),
-            ('Repair Masters', 'Tom Wilson', '+1234567892', 'tom@repairmasters.com', 'REPAIR', 5, '789 Fixer Lane, Austin, TX'),
-            ('Quick Fix Services', 'Jane Smith', '+1234567893', 'jane@quickfix.com', 'REPAIR', 4, '321 Quick St, Chicago, IL'),
-            ('Office Depot', 'Bill Johnson', '+1234567894', 'bill@officedepot.com', 'SUPPLIER', 3, '654 Office Blvd, Seattle, WA'),
-            ('Enterprise IT Supply', 'Robert Brown', '+1234567895', 'robert@enterpriseit.com', 'BOTH', 5, '987 Enterprise Way, San Francisco, CA'),
+            ('Tech Solutions Inc.', 'Mike Johnson', '+1234567890',
+             'mike@techsolutions.com', 'BOTH', 5, '123 Tech Street, Silicon Valley, CA'),
+            ('Global Electronics', 'Sarah Davis', '+1234567891',
+             'sarah@globalelec.com', 'SUPPLIER', 4, '456 Commerce Ave, New York, NY'),
+            ('Repair Masters', 'Tom Wilson', '+1234567892',
+             'tom@repairmasters.com', 'REPAIR', 5, '789 Fixer Lane, Austin, TX'),
+            ('Quick Fix Services', 'Jane Smith', '+1234567893',
+             'jane@quickfix.com', 'REPAIR', 4, '321 Quick St, Chicago, IL'),
+            ('Office Depot', 'Bill Johnson', '+1234567894', 'bill@officedepot.com',
+             'SUPPLIER', 3, '654 Office Blvd, Seattle, WA'),
+            ('Enterprise IT Supply', 'Robert Brown', '+1234567895',
+             'robert@enterpriseit.com', 'BOTH', 5, '987 Enterprise Way, San Francisco, CA'),
         ]
         for name, person, phone, email, vtype, rating, addr in vendor_data:
             vendor, _ = Vendor.objects.get_or_create(
@@ -236,65 +267,114 @@ class Command(BaseCommand):
             'Canon': brands.get('Canon') or brands.get('HP'),
             'Microsoft': brands.get('Microsoft') or brands.get('Dell'),
         })
-        
+
         if minimal:
             equip_data = [
-                ('Laptop', 'Dell', 'Latitude 5520', 'DELL-NB-001', 'AVAILABLE', None),
-                ('Laptop', 'HP', 'EliteBook 840', 'HP-NB-001', 'ASSIGNED', employees[0]),
-                ('Desktop', 'Lenovo', 'ThinkCentre M70', 'LENOVO-DT-001', 'AVAILABLE', None),
-                ('Printer', 'HP', 'LaserJet Pro M182nw', 'HP-PRT-001', 'REPAIRING', None, vendors['Repair Masters']),
-                ('Monitor', 'Samsung', 'UR59C', 'SAMSUNG-MON-001', 'AVAILABLE', None),
+                ('Laptop', 'Dell', 'Latitude 5520',
+                 'DELL-NB-001', 'AVAILABLE', None),
+                ('Laptop', 'HP', 'EliteBook 840',
+                 'HP-NB-001', 'ASSIGNED', employees[0]),
+                ('Desktop', 'Lenovo', 'ThinkCentre M70',
+                 'LENOVO-DT-001', 'AVAILABLE', None),
+                ('Printer', 'HP', 'LaserJet Pro M182nw', 'HP-PRT-001',
+                 'REPAIRING', None, vendors['Repair Masters']),
+                ('Monitor', 'Samsung', 'UR59C',
+                 'SAMSUNG-MON-001', 'AVAILABLE', None),
             ]
         else:
             equip_data = [
-                ('Laptop', 'Dell', 'Latitude 5520', 'DELL-NB-001', 'AVAILABLE', None),
-                ('Laptop', 'Dell', 'Latitude 5520', 'DELL-NB-002', 'AVAILABLE', None),
-                ('Laptop', 'Dell', 'Latitude 5420', 'DELL-NB-003', 'AVAILABLE', None),
-                ('Laptop', 'HP', 'EliteBook 840', 'HP-NB-001', 'ASSIGNED', employees[0]),
+                ('Laptop', 'Dell', 'Latitude 5520',
+                 'DELL-NB-001', 'AVAILABLE', None),
+                ('Laptop', 'Dell', 'Latitude 5520',
+                 'DELL-NB-002', 'AVAILABLE', None),
+                ('Laptop', 'Dell', 'Latitude 5420',
+                 'DELL-NB-003', 'AVAILABLE', None),
+                ('Laptop', 'HP', 'EliteBook 840',
+                 'HP-NB-001', 'ASSIGNED', employees[0]),
                 ('Laptop', 'HP', 'EliteBook 840', 'HP-NB-002', 'AVAILABLE', None),
-                ('Laptop', 'Apple', 'MacBook Pro 14"', 'APPLE-NB-001', 'AVAILABLE', None),
-                ('Laptop', 'Apple', 'MacBook Air M2', 'APPLE-NB-002', 'ASSIGNED', employees[1]),
-                ('Laptop', 'Lenovo', 'ThinkPad X1 Carbon', 'LENOVO-NB-001', 'ASSIGNED', employees[2]),
-                ('Laptop', 'Lenovo', 'ThinkPad T14', 'LENOVO-NB-002', 'AVAILABLE', None),
-                ('Laptop', 'Asus', 'ZenBook Pro 16X', 'ASUS-NB-001', 'AVAILABLE', None),
-                ('Desktop', 'Dell', 'OptiPlex 7090', 'DELL-DT-001', 'AVAILABLE', None),
+                ('Laptop', 'Apple', 'MacBook Pro 14"',
+                 'APPLE-NB-001', 'AVAILABLE', None),
+                ('Laptop', 'Apple', 'MacBook Air M2',
+                 'APPLE-NB-002', 'ASSIGNED', employees[1]),
+                ('Laptop', 'Lenovo', 'ThinkPad X1 Carbon',
+                 'LENOVO-NB-001', 'ASSIGNED', employees[2]),
+                ('Laptop', 'Lenovo', 'ThinkPad T14',
+                 'LENOVO-NB-002', 'AVAILABLE', None),
+                ('Laptop', 'Asus', 'ZenBook Pro 16X',
+                 'ASUS-NB-001', 'AVAILABLE', None),
+                ('Desktop', 'Dell', 'OptiPlex 7090',
+                 'DELL-DT-001', 'AVAILABLE', None),
                 ('Desktop', 'HP', 'ProDesk 400', 'HP-DT-001', 'AVAILABLE', None),
-                ('Desktop', 'Lenovo', 'ThinkCentre M70', 'LENOVO-DT-001', 'AVAILABLE', None),
-                ('Monitor', 'Dell', 'UltraSharp U2722D', 'DELL-MON-001', 'AVAILABLE', None),
-                ('Monitor', 'Dell', 'UltraSharp U2722D', 'DELL-MON-002', 'AVAILABLE', None),
-                ('Monitor', 'Samsung', 'Odyssey G7', 'SAMSUNG-MON-001', 'ASSIGNED', employees[3]),
-                ('Monitor', 'Samsung', 'Odyssey G7', 'SAMSUNG-MON-002', 'AVAILABLE', None),
+                ('Desktop', 'Lenovo', 'ThinkCentre M70',
+                 'LENOVO-DT-001', 'AVAILABLE', None),
+                ('Monitor', 'Dell', 'UltraSharp U2722D',
+                 'DELL-MON-001', 'AVAILABLE', None),
+                ('Monitor', 'Dell', 'UltraSharp U2722D',
+                 'DELL-MON-002', 'AVAILABLE', None),
+                ('Monitor', 'Samsung', 'Odyssey G7',
+                 'SAMSUNG-MON-001', 'ASSIGNED', employees[3]),
+                ('Monitor', 'Samsung', 'Odyssey G7',
+                 'SAMSUNG-MON-002', 'AVAILABLE', None),
                 ('Monitor', 'LG', '27UK850-W', 'LG-MON-001', 'AVAILABLE', None),
-                ('Printer', 'HP', 'LaserJet Pro M404dn', 'HP-PRT-001', 'AVAILABLE', None),
-                ('Printer', 'HP', 'LaserJet Pro M404dn', 'HP-PRT-002', 'REPAIRING', None, vendors['Repair Masters']),
-                ('Printer', 'Canon', 'ImageRunner 2520', 'CANON-PRT-001', 'AVAILABLE', None),
-                ('Keyboard', 'Logitech', 'MX Keys', 'LOGI-KB-001', 'AVAILABLE', None),
-                ('Keyboard', 'Logitech', 'MX Keys', 'LOGI-KB-002', 'ASSIGNED', employees[4]),
-                ('Keyboard', 'Logitech', 'MX Keys Advanced', 'LOGI-KB-003', 'AVAILABLE', None),
-                ('Keyboard', 'Microsoft', 'Surface Keyboard', 'MS-KB-001', 'AVAILABLE', None),
-                ('Mouse', 'Logitech', 'MX Master 3', 'LOGI-MO-001', 'AVAILABLE', None),
-                ('Mouse', 'Logitech', 'MX Master 3', 'LOGI-MO-002', 'ASSIGNED', employees[5]),
-                ('Mouse', 'Logitech', 'MX Master 3', 'LOGI-MO-003', 'AVAILABLE', None),
-                ('Mouse', 'Apple', 'Magic Mouse', 'APPLE-MO-001', 'AVAILABLE', None),
-                ('Headphones', 'Apple', 'AirPods Pro', 'AP-HP-001', 'AVAILABLE', None),
-                ('Headphones', 'Apple', 'AirPods Pro', 'AP-HP-002', 'ASSIGNED', employees[6]),
-                ('Headphones', 'Sony', 'WH-1000XM5', 'SONY-HP-001', 'AVAILABLE', None),
-                ('Headphones', 'Bose', 'QuietComfort 45', 'BOSE-HP-001', 'AVAILABLE', None),
+                ('Printer', 'HP', 'LaserJet Pro M404dn',
+                 'HP-PRT-001', 'AVAILABLE', None),
+                ('Printer', 'HP', 'LaserJet Pro M404dn', 'HP-PRT-002',
+                 'REPAIRING', None, vendors['Repair Masters']),
+                ('Printer', 'Canon', 'ImageRunner 2520',
+                 'CANON-PRT-001', 'AVAILABLE', None),
+                ('Keyboard', 'Logitech', 'MX Keys',
+                 'LOGI-KB-001', 'AVAILABLE', None),
+                ('Keyboard', 'Logitech', 'MX Keys',
+                 'LOGI-KB-002', 'ASSIGNED', employees[4]),
+                ('Keyboard', 'Logitech', 'MX Keys Advanced',
+                 'LOGI-KB-003', 'AVAILABLE', None),
+                ('Keyboard', 'Microsoft', 'Surface Keyboard',
+                 'MS-KB-001', 'AVAILABLE', None),
+                ('Mouse', 'Logitech', 'MX Master 3',
+                 'LOGI-MO-001', 'AVAILABLE', None),
+                ('Mouse', 'Logitech', 'MX Master 3',
+                 'LOGI-MO-002', 'ASSIGNED', employees[5]),
+                ('Mouse', 'Logitech', 'MX Master 3',
+                 'LOGI-MO-003', 'AVAILABLE', None),
+                ('Mouse', 'Apple', 'Magic Mouse',
+                 'APPLE-MO-001', 'AVAILABLE', None),
+                ('Headphones', 'Apple', 'AirPods Pro',
+                 'AP-HP-001', 'AVAILABLE', None),
+                ('Headphones', 'Apple', 'AirPods Pro',
+                 'AP-HP-002', 'ASSIGNED', employees[6]),
+                ('Headphones', 'Sony', 'WH-1000XM5',
+                 'SONY-HP-001', 'AVAILABLE', None),
+                ('Headphones', 'Bose', 'QuietComfort 45',
+                 'BOSE-HP-001', 'AVAILABLE', None),
                 ('Webcam', 'Logitech', 'C920', 'LOGI-WC-001', 'AVAILABLE', None),
-                ('Webcam', 'Logitech', 'Brio 4K', 'LOGI-WC-002', 'AVAILABLE', None),
-                ('Webcam', 'Microsoft', 'LifeCam HD-3000', 'MS-WC-001', 'AVAILABLE', None),
-                ('Tablet', 'Apple', 'iPad Pro 12.9"', 'APPLE-TB-001', 'AVAILABLE', None),
-                ('Tablet', 'Apple', 'iPad Air', 'APPLE-TB-002', 'ASSIGNED', employees[7]),
-                ('Tablet', 'Samsung', 'Galaxy Tab S8', 'SAMSUNG-TB-001', 'AVAILABLE', None),
-                ('Router', 'Cisco', 'Meraki MR46', 'CISCO-RO-001', 'AVAILABLE', None),
-                ('Router', 'Cisco', 'Catalyst 9200', 'CISCO-RO-002', 'AVAILABLE', None),
-                ('Router', 'Netgear', 'Nighthawk AX12', 'NETGEAR-RO-001', 'AVAILABLE', None),
-                ('Phone', 'Samsung', 'Galaxy S23', 'SAMSUNG-PH-001', 'ASSIGNED', employees[8]),
-                ('Phone', 'Apple', 'iPhone 14 Pro', 'APPLE-PH-001', 'ASSIGNED', employees[9]),
-                ('Scanner', 'Epson', 'WorkForce ES-400', 'EPSON-SC-001', 'AVAILABLE', None),
-                ('UPS', 'APC', 'Smart-UPS 1500VA', 'APC-UPS-001', 'AVAILABLE', None),
-                ('Server', 'Dell', 'PowerEdge R750', 'DELL-SRV-001', 'AVAILABLE', None),
-                ('Projector', 'Epson', 'PowerLite 2250U', 'EPSON-PRJ-001', 'AVAILABLE', None),
+                ('Webcam', 'Logitech', 'Brio 4K',
+                 'LOGI-WC-002', 'AVAILABLE', None),
+                ('Webcam', 'Microsoft', 'LifeCam HD-3000',
+                 'MS-WC-001', 'AVAILABLE', None),
+                ('Tablet', 'Apple', 'iPad Pro 12.9"',
+                 'APPLE-TB-001', 'AVAILABLE', None),
+                ('Tablet', 'Apple', 'iPad Air',
+                 'APPLE-TB-002', 'ASSIGNED', employees[7]),
+                ('Tablet', 'Samsung', 'Galaxy Tab S8',
+                 'SAMSUNG-TB-001', 'AVAILABLE', None),
+                ('Router', 'Cisco', 'Meraki MR46',
+                 'CISCO-RO-001', 'AVAILABLE', None),
+                ('Router', 'Cisco', 'Catalyst 9200',
+                 'CISCO-RO-002', 'AVAILABLE', None),
+                ('Router', 'Netgear', 'Nighthawk AX12',
+                 'NETGEAR-RO-001', 'AVAILABLE', None),
+                ('Phone', 'Samsung', 'Galaxy S23',
+                 'SAMSUNG-PH-001', 'ASSIGNED', employees[8]),
+                ('Phone', 'Apple', 'iPhone 14 Pro',
+                 'APPLE-PH-001', 'ASSIGNED', employees[9]),
+                ('Scanner', 'Epson', 'WorkForce ES-400',
+                 'EPSON-SC-001', 'AVAILABLE', None),
+                ('UPS', 'APC', 'Smart-UPS 1500VA',
+                 'APC-UPS-001', 'AVAILABLE', None),
+                ('Server', 'Dell', 'PowerEdge R750',
+                 'DELL-SRV-001', 'AVAILABLE', None),
+                ('Projector', 'Epson', 'PowerLite 2250U',
+                 'EPSON-PRJ-001', 'AVAILABLE', None),
             ]
 
         equipment_list = []
@@ -303,9 +383,9 @@ class Command(BaseCommand):
             status = data[4]
             assigned = data[5] if len(data) > 5 and data[5] else None
             repair_vendor = data[6] if len(data) > 6 and data[6] else None
-            
+
             purchase_cost = random.randint(500, 5000)
-            
+
             eq, created = Equipment.objects.get_or_create(
                 serial_number=serial,
                 defaults={
@@ -347,7 +427,7 @@ class Command(BaseCommand):
         business = BusinessInfo.objects.filter(is_active=True).first()
         if not business:
             return
-            
+
         social_platforms = [
             ('facebook', 'https://facebook.com/techcorp'),
             ('linkedin', 'https://linkedin.com/company/techcorp'),
@@ -368,14 +448,22 @@ class Command(BaseCommand):
 
     def create_notification_templates(self):
         templates = [
-            ('REQUEST_CREATED', 'New IT Request - #{{request_id}}', 'A new {{request_type}} request has been submitted by {{user_name}}. Please review and approve.'),
-            ('REQUEST_APPROVED', 'Request Approved - #{{request_id}}', 'Your {{request_type}} request has been approved by {{manager_name}} and is now being processed by IT.'),
-            ('REQUEST_REJECTED', 'Request Rejected - #{{request_id}}', 'Your {{request_type}} request has been rejected. Please contact your manager for more details.'),
-            ('REQUEST_COMPLETED', 'Request Completed - #{{request_id}}', 'Your {{request_type}} request has been completed. Please collect your equipment from IT department.'),
-            ('EQUIPMENT_ASSIGNED', 'New Equipment Assigned', 'New equipment ({{equipment_name}}) has been assigned to you. Serial: {{serial_number}}'),
-            ('EQUIPMENT_RETURNED', 'Equipment Returned', 'Equipment ({{equipment_name}}) has been returned and is now available in inventory.'),
-            ('MAINTENANCE_DUE', 'Maintenance Due', 'Equipment {{equipment_name}} (SN: {{serial_number}}) requires maintenance.'),
-            ('WARRANTY_EXPIRING', 'Warranty Expiring', 'Equipment {{equipment_name}} warranty expires on {{expiry_date}}. Please plan for renewal.'),
+            ('REQUEST_CREATED', 'New IT Request - #{{request_id}}',
+             'A new {{request_type}} request has been submitted by {{user_name}}. Please review and approve.'),
+            ('REQUEST_APPROVED', 'Request Approved - #{{request_id}}',
+             'Your {{request_type}} request has been approved by {{manager_name}} and is now being processed by IT.'),
+            ('REQUEST_REJECTED', 'Request Rejected - #{{request_id}}',
+             'Your {{request_type}} request has been rejected. Please contact your manager for more details.'),
+            ('REQUEST_COMPLETED', 'Request Completed - #{{request_id}}',
+             'Your {{request_type}} request has been completed. Please collect your equipment from IT department.'),
+            ('EQUIPMENT_ASSIGNED', 'New Equipment Assigned',
+             'New equipment ({{equipment_name}}) has been assigned to you. Serial: {{serial_number}}'),
+            ('EQUIPMENT_RETURNED', 'Equipment Returned',
+             'Equipment ({{equipment_name}}) has been returned and is now available in inventory.'),
+            ('MAINTENANCE_DUE', 'Maintenance Due',
+             'Equipment {{equipment_name}} (SN: {{serial_number}}) requires maintenance.'),
+            ('WARRANTY_EXPIRING', 'Warranty Expiring',
+             'Equipment {{equipment_name}} warranty expires on {{expiry_date}}. Please plan for renewal.'),
             ('SYSTEM_ALERT', 'System Alert', 'Important: {{alert_message}}'),
         ]
         count = 0
@@ -393,16 +481,26 @@ class Command(BaseCommand):
 
     def create_requests(self, employees, categories, brands, vendors, equipment_list, it_admin):
         requests_data = [
-            (employees[0], 'NEW', 'HIGH', categories['Laptop'], brands['Dell'], 'Need a high-performance laptop for new project', 'PENDING', None),
-            (employees[1], 'NEW', 'MEDIUM', categories['Laptop'], brands['Apple'], 'Current laptop is running slow', 'MANAGER_APPROVED', None),
-            (employees[2], 'NEW', 'LOW', categories['Monitor'], brands['Samsung'], 'Need second monitor for dual display', 'PENDING', None),
-            (employees[3], 'REPAIR', 'HIGH', None, None, 'Laptop not powering on', 'IT_RECEIVED', equipment_list[18]),
-            (employees[4], 'NEW', 'MEDIUM', categories['Headphones'], brands['Sony'], 'Need noise-cancelling headphones for open office', 'PENDING', None),
-            (employees[5], 'NEW', 'HIGH', categories['Tablet'], brands['Apple'], 'Need tablet for client presentations', 'MANAGER_APPROVED', None),
-            (employees[6], 'REPAIR', 'MEDIUM', None, None, 'Phone screen cracked', 'IN_PROGRESS', equipment_list[41], vendors['Repair Masters']),
-            (employees[7], 'NEW', 'LOW', categories['Webcam'], brands['Logitech'], 'Need better webcam for video calls', 'PENDING', None),
-            (employees[8], 'NEW', 'MEDIUM', categories['Keyboard'], brands['Logitech'], 'Current keyboard keys not working', 'PENDING', None),
-            (employees[9], 'REPAIR', 'MEDIUM', None, None, 'Printer paper jam issues', 'PENDING', equipment_list[19]),
+            (employees[0], 'NEW', 'HIGH', categories['Laptop'], brands['Dell'],
+             'Need a high-performance laptop for new project', 'PENDING', None),
+            (employees[1], 'NEW', 'MEDIUM', categories['Laptop'], brands['Apple'],
+             'Current laptop is running slow', 'MANAGER_APPROVED', None),
+            (employees[2], 'NEW', 'LOW', categories['Monitor'], brands['Samsung'],
+             'Need second monitor for dual display', 'PENDING', None),
+            (employees[3], 'REPAIR', 'HIGH', None, None,
+             'Laptop not powering on', 'IT_RECEIVED', equipment_list[18]),
+            (employees[4], 'NEW', 'MEDIUM', categories['Headphones'], brands['Sony'],
+             'Need noise-cancelling headphones for open office', 'PENDING', None),
+            (employees[5], 'NEW', 'HIGH', categories['Tablet'], brands['Apple'],
+             'Need tablet for client presentations', 'MANAGER_APPROVED', None),
+            (employees[6], 'REPAIR', 'MEDIUM', None, None, 'Phone screen cracked',
+             'IN_PROGRESS', equipment_list[41], vendors['Repair Masters']),
+            (employees[7], 'NEW', 'LOW', categories['Webcam'], brands['Logitech'],
+             'Need better webcam for video calls', 'PENDING', None),
+            (employees[8], 'NEW', 'MEDIUM', categories['Keyboard'],
+             brands['Logitech'], 'Current keyboard keys not working', 'PENDING', None),
+            (employees[9], 'REPAIR', 'MEDIUM', None, None,
+             'Printer paper jam issues', 'PENDING', equipment_list[19]),
         ]
 
         requests_list = []
@@ -446,13 +544,16 @@ class Command(BaseCommand):
     def create_maintenance_records(self, requests_list, vendors, equipment_list, it_admin):
         from equipment.models import MaintenanceRecord
         from django.utils import timezone
-        
+
         maintenance_data = [
-            (requests_list[3], equipment_list[18], vendors['Repair Masters'], 'Laptop not powering on - motherboard issue', 500, None, 'COMPLETED'),
-            (requests_list[6], equipment_list[41], vendors['Quick Fix Services'], 'Phone screen cracked - replaced display', 350, None, 'COMPLETED'),
-            (requests_list[9], equipment_list[19], vendors['Repair Masters'], 'Printer paper jam - roller replacement', 200, None, 'IN_PROGRESS'),
+            (requests_list[3], equipment_list[18], vendors['Repair Masters'],
+             'Laptop not powering on - motherboard issue', 500, None, 'COMPLETED'),
+            (requests_list[6], equipment_list[41], vendors['Quick Fix Services'],
+             'Phone screen cracked - replaced display', 350, None, 'COMPLETED'),
+            (requests_list[9], equipment_list[19], vendors['Repair Masters'],
+             'Printer paper jam - roller replacement', 200, None, 'IN_PROGRESS'),
         ]
-        
+
         count = 0
         for req, eq, vendor, issue, est_cost, actual_cost, status in maintenance_data:
             m_record, created = MaintenanceRecord.objects.get_or_create(
@@ -472,7 +573,7 @@ class Command(BaseCommand):
             )
             if created:
                 count += 1
-        
+
         self.stdout.write(f'  Created {count} maintenance records')
         return count
 
@@ -496,7 +597,8 @@ class Command(BaseCommand):
     def create_equipment_logs(self, equipment_list, it_admin):
         status_changes = [
             (equipment_list[0], 'AVAILABLE', 'ASSIGNED', 'Initial assignment'),
-            (equipment_list[3], 'AVAILABLE', 'ASSIGNED', 'Assigned to employee'),
+            (equipment_list[3], 'AVAILABLE',
+             'ASSIGNED', 'Assigned to employee'),
             (equipment_list[18], 'AVAILABLE', 'REPAIRING', 'Sent for repair'),
             (equipment_list[19], 'AVAILABLE', 'REPAIRING', 'Sent for repair'),
         ]
@@ -515,15 +617,22 @@ class Command(BaseCommand):
 
     def create_notifications(self, employees, it_admin, requests_list):
         notif_data = [
-            (employees[0], 'REQUEST_CREATED', 'Request Submitted', f'Your request has been submitted and is awaiting manager approval.', 'MEDIUM'),
-            (employees[1], 'REQUEST_APPROVED', 'Request Approved', 'Your request has been approved!', 'HIGH'),
-            (employees[2], 'EQUIPMENT_ASSIGNED', 'New Equipment', 'You have been assigned new equipment.', 'HIGH'),
-            (employees[3], 'MAINTENANCE_DUE', 'Maintenance Required', 'Your equipment requires maintenance attention.', 'MEDIUM'),
-            (employees[4], 'REQUEST_CREATED', 'Request Received', 'Your request has been received by IT department.', 'LOW'),
-            (it_admin, 'SYSTEM_ALERT', 'New System Alert', 'System check completed successfully.', 'LOW'),
-            (it_admin, 'WARRANTY_EXPIRING', 'Warranty Alert', '5 equipment items have warranties expiring soon.', 'HIGH'),
+            (employees[0], 'REQUEST_CREATED', 'Request Submitted',
+             f'Your request has been submitted and is awaiting manager approval.', 'MEDIUM'),
+            (employees[1], 'REQUEST_APPROVED', 'Request Approved',
+             'Your request has been approved!', 'HIGH'),
+            (employees[2], 'EQUIPMENT_ASSIGNED', 'New Equipment',
+             'You have been assigned new equipment.', 'HIGH'),
+            (employees[3], 'MAINTENANCE_DUE', 'Maintenance Required',
+             'Your equipment requires maintenance attention.', 'MEDIUM'),
+            (employees[4], 'REQUEST_CREATED', 'Request Received',
+             'Your request has been received by IT department.', 'LOW'),
+            (it_admin, 'SYSTEM_ALERT', 'New System Alert',
+             'System check completed successfully.', 'LOW'),
+            (it_admin, 'WARRANTY_EXPIRING', 'Warranty Alert',
+             '5 equipment items have warranties expiring soon.', 'HIGH'),
         ]
-        
+
         count = 0
         for user, notif_type, title, message, priority in notif_data:
             Notification.objects.create(
@@ -544,7 +653,8 @@ class Command(BaseCommand):
             if eq.qr_code:
                 eq.qr_code.delete(save=True)
             eq.save()
-        self.stdout.write(f'  Regenerated QR codes for {Equipment.objects.count()} equipment')
+        self.stdout.write(
+            f'  Regenerated QR codes for {Equipment.objects.count()} equipment')
 
     def print_summary(self, equipment_list, employees, requests_list):
         self.stdout.write('')
@@ -558,5 +668,7 @@ class Command(BaseCommand):
         self.stdout.write('')
         self.stdout.write('Login credentials:')
         self.stdout.write('  IT Admin: admin / admin123')
-        self.stdout.write('  Manager:  manager_hr / manager123 (or manager_finance / manager123)')
-        self.stdout.write('  Employee: alice / employee123 (or any employee / employee123)')
+        self.stdout.write(
+            '  Manager:  manager_hr / manager123 (or manager_finance / manager123)')
+        self.stdout.write(
+            '  Employee: alice / employee123 (or any employee / employee123)')

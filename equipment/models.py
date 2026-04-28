@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from decimal import Decimal
 import uuid
@@ -8,6 +8,7 @@ from django.core.files import File
 from PIL import Image
 from accounts.models import User
 from django.utils import timezone
+from core.models import SequenceCounter
 
 
 class Vendor(models.Model):
@@ -18,6 +19,8 @@ class Vendor(models.Model):
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     contact_person = models.CharField(max_length=100, blank=True)
     phone = models.CharField(max_length=20)
     email = models.EmailField(blank=True)
@@ -27,6 +30,9 @@ class Vendor(models.Model):
 
     # Track performance
     rating = models.IntegerField(default=5, help_text="Rating out of 5")
+
+    class Meta:
+        ordering = ['name']
 
     def __str__(self):
         return self.name
@@ -38,7 +44,8 @@ class Brand(models.Model):
     support_contact = models.CharField(
         max_length=100, blank=True, help_text="Brand helpline number")
     website = models.URLField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
@@ -49,7 +56,8 @@ class Category(models.Model):
     name = models.CharField(max_length=100)
     icon = models.CharField(max_length=50, help_text="Tailwind/Heroicons name")
     description = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
@@ -64,6 +72,8 @@ class Equipment(models.Model):
     ]
     tracking_id = models.CharField(max_length=20, unique=True, editable=False)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     category = models.ForeignKey(
         Category, on_delete=models.CASCADE, related_name='equipments')
     brand = models.ForeignKey(
@@ -120,24 +130,15 @@ class Equipment(models.Model):
 
     def generate_tracking_id(self):
         """
-        Generates a custom ID like EQ-2026-0001
+        Generates a custom ID like EQ-2026-0001 using atomic counter
         """
         year = timezone.now().year
         prefix = 'EQ'
-        last_equipment = Equipment.objects.filter(tracking_id__startswith=f"{prefix}-{year}")\
-            .order_by('-tracking_id').first()
-
-        if last_equipment:
-            # Extract the last 4 digits and increment
-            last_number = int(last_equipment.tracking_id.split('-')[-1])
-            new_number = str(last_number + 1).zfill(4)
-        else:
-            new_number = '0001'
-
-        return f"{prefix}-{year}-{new_number}"
+        next_value = SequenceCounter.get_next_value(prefix, year)
+        return f"{prefix}-{year}-{str(next_value).zfill(4)}"
 
     def save(self, *args, **kwargs):
-        # 1. Generate Tracking ID (only on first creation)
+        # 1. Generate Tracking ID (only on first creation) - wrapped in atomic transaction
         if not self.tracking_id:
             self.tracking_id = self.generate_tracking_id()
 
@@ -222,6 +223,7 @@ class EquipmentLog(models.Model):
     new_status = models.CharField(max_length=20)
     remarks = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.equipment} - {self.old_status} to {self.new_status} by {self.action_by} on {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
@@ -234,6 +236,8 @@ class MaintenanceRecord(models.Model):
         'equipment.Equipment', on_delete=models.CASCADE)
     vendor = models.ForeignKey(
         Vendor, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     issue_description = models.TextField()
     estimated_cost = models.DecimalField(

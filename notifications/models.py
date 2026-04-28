@@ -25,6 +25,8 @@ class Notification(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -61,7 +63,6 @@ class Notification(models.Model):
     is_archived = models.BooleanField(default=False)
 
     # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
     read_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -87,7 +88,7 @@ class Notification(models.Model):
         """Check if high priority notification is unread for more than 24 hours"""
         from django.utils import timezone
         if self.priority in ['HIGH', 'CRITICAL'] and not self.is_read:
-            return (timezone.now() - self.created_at).days > 0
+            return (timezone.now() - self.created_at).total_seconds() > 86400  # 24 hours
         return False
 
 

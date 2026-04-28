@@ -1,5 +1,5 @@
 from django.db import transaction
-from datetime import date as today_date
+from django.utils import timezone
 from requests.models import Request, RequestLog
 from equipment.models import Equipment, EquipmentLog
 
@@ -19,7 +19,7 @@ class RequestService:
             request_obj.equipment = equipment_obj
             equipment_obj.status = 'ASSIGNED'
             equipment_obj.assigned_to = request_obj.user
-            equipment_obj.assigned_date = today_date.today()
+            equipment_obj.assigned_date = timezone.now().date()
             equipment_obj.save()
 
             EquipmentLog.objects.create(

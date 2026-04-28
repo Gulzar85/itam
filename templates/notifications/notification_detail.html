@@ -18,7 +18,7 @@
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-3">
                 {% if object.notification_type == 'info' %}
-                <div class="flex items-center justify-center w-10 h-10 rounded-full" style="background-color: rgba(var(--primary-color-rgb, 59, 130, 246), 0.1);">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full" style="background-color: color-mix(in srgb, var(--primary-color) 10%, white);">
                     <i data-lucide="info" class="w-5 h-5" style="color: var(--primary-color);"></i>
                 </div>
                 {% elif object.notification_type == 'warning' %}
@@ -41,7 +41,7 @@
                         {% if object.notification_type == 'warning' %}bg-yellow-100 text-yellow-800{% endif %}
                         {% if object.notification_type == 'error' %}bg-red-100 text-red-800{% endif %}
                         {% if object.notification_type == 'success' %}bg-green-100 text-green-800{% endif %}"
-                        {% if object.notification_type == 'info' %}style="background-color: rgba(var(--primary-color-rgb, 59, 130, 246), 0.1); color: var(--primary-color);"{% endif %}>
+                        {% if object.notification_type == 'info' %}style="background-color: color-mix(in srgb, var(--primary-color) 10%, white); color: var(--primary-color);"{% endif %}>
                         {{ object.get_notification_type_display }}
                     </span>
                 </div>

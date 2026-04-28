@@ -1,5 +1,39 @@
-from django.db import models
+from django.db import models, transaction
 from django.core.validators import RegexValidator
+
+
+class SequenceCounter(models.Model):
+    """Atomic counter for generating sequential IDs"""
+    key = models.CharField(max_length=50, unique=True, primary_key=True)
+    year = models.IntegerField()
+    value = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = 'sequence_counters'
+
+    @classmethod
+    def get_next_value(cls, prefix, year=None):
+        """Atomically increment and return the next value for given prefix and year"""
+        if year is None:
+            from django.utils import timezone
+            year = timezone.now().year
+
+        key = f"{prefix}-{year}"
+
+        with transaction.atomic():
+            counter, created = cls.objects.select_for_update().get_or_create(
+                key=key,
+                defaults={'year': year, 'value': 0}
+            )
+            # Reset counter if year changed
+            if counter.year != year:
+                counter.year = year
+                counter.value = 0
+                counter.save()
+
+            counter.value += 1
+            counter.save()
+            return counter.value
 
 
 class BusinessInfo(models.Model):
@@ -19,8 +53,9 @@ class BusinessInfo(models.Model):
     )
     website = models.URLField(blank=True)
 
-    primary_color = models.CharField(max_length=7, default='#000000')
-    secondary_color = models.CharField(max_length=7, default='#FFFFFF')
+    primary_color = models.CharField(max_length=7, default='#DA291C')
+    secondary_color = models.CharField(max_length=7, default='#FFC72C')
+    accent_color = models.CharField(max_length=7, default='#FFBD0A')
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -2,7 +2,7 @@ import logging
 from typing import Any, cast
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.db import transaction
 from django.db.models import Q
@@ -12,8 +12,8 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
+
+from services.permissions import ITAdminRequiredMixin, ManagerOrAdminRequiredMixin
 
 from accounts.models import User
 from equipment.models import Equipment, EquipmentLog, MaintenanceRecord, Vendor
@@ -40,7 +40,7 @@ class RequestDashboardView(LoginRequiredMixin, ListView):
         if hasattr(user, 'role') and user.role == 'IT_ADMIN':
             return base_qs.all().order_by('-created_at')
 
-        if hasattr(user, 'role') and user.role == 'MANAGER':
+        if hasattr(user, 'role') and (user.role == 'IT_ADMIN' or user.can_approve):
             return base_qs.filter(Q(user=user) | Q(user__manager=user)).distinct().order_by('-created_at')
 
         return base_qs.filter(user=user).order_by('-created_at')
@@ -76,7 +76,6 @@ class RequestCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
         return super().form_valid(form)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class RequestActionView(LoginRequiredMixin, View):
     def post(self, request, pk):
         request_obj = get_object_or_404(Request, pk=pk)
@@ -87,7 +86,7 @@ class RequestActionView(LoginRequiredMixin, View):
 
         user = cast(User, request.user)
 
-        # Permission Logic
+        # Permission Logic using ManagerOrAdminRequiredMixin logic
         is_manager = (request_obj.user.manager_id == user.id) if request_obj.user.manager else False
         is_it_admin = (hasattr(user, 'role') and user.role == 'IT_ADMIN')
 
@@ -149,21 +148,18 @@ class RequestDetailView(LoginRequiredMixin, DetailView):
         # Permission Logic
         context['can_perform_actions'] = (
             user.is_staff or
-            (hasattr(user, 'role') and user.role in ['IT_ADMIN', 'MANAGER'])
+            (hasattr(user, 'role') and user.role in ['IT_ADMIN'] or getattr(user, 'can_approve', False))
         )
         return context
 
 
-class AssignmentCreateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessageMixin, CreateView):
+class AssignmentCreateView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageMixin, CreateView):
     """General assignment view (not linked to a specific request)"""
     model = Assignment
     fields = ['equipment', 'user', 'notes']
     template_name = 'requests/assignment_form.html'
     success_url = reverse_lazy('equipment:equipment_list')
     success_message = "Asset successfully assigned."
-
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -193,11 +189,7 @@ class AssignmentCreateView(LoginRequiredMixin, UserPassesTestMixin, SuccessMessa
         return super().form_valid(form)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
-class RequestAssignmentView(LoginRequiredMixin, UserPassesTestMixin, View):
-
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
+class RequestAssignmentView(LoginRequiredMixin, ITAdminRequiredMixin, View):
 
     def post(self, request, pk):
         request_obj = get_object_or_404(Request, pk=pk)
@@ -225,15 +217,12 @@ class RequestAssignmentView(LoginRequiredMixin, UserPassesTestMixin, View):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
-class ManagerApprovalView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+class ManagerApprovalView(LoginRequiredMixin, ManagerOrAdminRequiredMixin, ListView):
     """View for managers/admins to approve or reject team requests"""
     model = Request
     template_name = 'requests/manager_approvals.html'
     context_object_name = 'requests'
     paginate_by = 20
-
-    def test_func(self):
-        return self.request.user.role in ['IT_ADMIN', 'MANAGER']
 
     def get_queryset(self):
         user = self.request.user
@@ -260,14 +249,10 @@ class ManagerApprovalView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return context
 
 
-@method_decorator(csrf_exempt, name='dispatch')
-class ProcessMaintenanceView(LoginRequiredMixin, UserPassesTestMixin, View):
+class ProcessMaintenanceView(LoginRequiredMixin, ITAdminRequiredMixin, View):
     """
     IT Admin ke liye: Asset ko repair ke liye vendor ke paas bhejne ka logic.
     """
-
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
 
     @transaction.atomic
     def post(self, request, pk):
@@ -322,12 +307,8 @@ class ProcessMaintenanceView(LoginRequiredMixin, UserPassesTestMixin, View):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
-class CompleteMaintenanceView(LoginRequiredMixin, UserPassesTestMixin, View):
+class CompleteMaintenanceView(LoginRequiredMixin, ITAdminRequiredMixin, View):
     """Repair se wapas receive karna aur usi employee ko assigned rakhna"""
-
-    def test_func(self):
-        return self.request.user.role == 'IT_ADMIN'
 
     @transaction.atomic
     def post(self, request, pk):

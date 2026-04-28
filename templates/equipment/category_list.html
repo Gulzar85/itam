@@ -2,99 +2,100 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto">
-    <div class="mb-8">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-800">Equipment Categories</h1>
-                <p class="text-gray-600">Manage equipment categories and classifications</p>
+    <!-- Header with gradient -->
+    <div class="mb-6 -mx-4 -mt-4 px-4 py-6 rounded-t-xl" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 80%, white) 100%);">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="text-white">
+                <h1 class="text-2xl md:text-3xl font-bold">Categories</h1>
+                <p class="text-white/80 mt-1">Manage equipment categories</p>
             </div>
-            <a href="{% url 'equipment:category_create' %}" class="text-white px-6 py-3 rounded-xl hover:opacity-90 transition-colors font-medium" style="background-color: var(--primary-color);">
-                <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>
+            <a href="{% url 'equipment:category_create' %}" class="text-white px-4 py-2 rounded-lg hover:opacity-90 transition-colors flex items-center text-sm font-medium" style="background-color: var(--primary-color);">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
                 Add Category
             </a>
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-4">
-        <div class="flex flex-col md:flex-row gap-4">
+    <!-- Search -->
+    <div class="bg-white rounded-xl p-4 shadow-sm border mb-4">
+        <div class="flex flex-col md:flex-row gap-3">
             <div class="flex-1">
                 <div class="relative">
-                    <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                    <input type="text" id="searchInput" placeholder="Search categories..." class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl outline-none transition-all bg-white/50" style="focus:ring-2; focus:ring-color: var(--primary-color);">
+                    <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="searchInput" placeholder="Search categories..." class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg outline-none transition-all">
                 </div>
             </div>
-            <div class="flex gap-2">
-                <select id="sortSelect" class="px-4 py-3 border border-gray-200 rounded-xl outline-none transition-all bg-white/50" style="focus:ring-2; focus:ring-color: var(--primary-color);">
-                    <option value="name">Sort by Name</option>
-                    <option value="created">Sort by Date Added</option>
-                </select>
-            </div>
+            <select id="sortSelect" class="px-4 py-2.5 border border-gray-200 rounded-lg outline-none transition-all bg-white">
+                <option value="name">Sort by Name</option>
+                <option value="created">Sort by Date</option>
+            </select>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="categoriesGrid">
+    <!-- Categories Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="categoriesGrid">
         {% for category in object_list %}
-        <div class="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md border border-slate-100 transition-shadow">
-            <div class="flex items-start justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-md">
-                        <i data-lucide="{{ category.icon|default:'folder' }}" class="w-6 h-6 text-white"></i>
+        <div class="bg-white rounded-xl shadow-sm hover:shadow-md border transition-all group">
+            <div class="p-4">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--primary-color);">
+                            <i data-lucide="{{ category.icon|default:'folder' }}" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-800">{{ category.name }}</h3>
+                            {% if category.description %}
+                            <p class="text-xs text-gray-500 truncate max-w-[150px]">{{ category.description }}</p>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="text-xl font-semibold text-gray-800">{{ category.name }}</h3>
-                        {% if category.description %}
-                        <p class="text-gray-500 text-sm mt-1">{{ category.description|truncatechars:60 }}</p>
-                        {% endif %}
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <a href="{% url 'equipment:category_detail' category.pk %}" class="p-1.5 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-100">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </a>
+                        <a href="{% url 'equipment:category_update' category.pk %}" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-500 hover:bg-emerald-100">
+                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                        </a>
+                        <a href="{% url 'equipment:category_delete' category.pk %}" class="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </a>
                     </div>
                 </div>
-                <div class="flex gap-1">
-                    <a href="{% url 'equipment:category_detail' category.pk %}" class="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 hover:text-blue-600 transition-colors">
-                        <i data-lucide="eye" class="w-4 h-4"></i>
-                    </a>
-                    <a href="{% url 'equipment:category_update' category.pk %}" class="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-500 hover:text-emerald-600 transition-colors">
-                        <i data-lucide="edit-2" class="w-4 h-4"></i>
-                    </a>
-                    <a href="{% url 'equipment:category_delete' category.pk %}" class="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-600 transition-colors">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </a>
+                <div class="flex items-center justify-between text-xs text-gray-400 pt-3 border-t">
+                    <span class="flex items-center gap-1">
+                        <i data-lucide="package" class="w-3 h-3"></i>
+                        {{ category.equipments.count }}
+                    </span>
+                    <span>{{ category.created_at|date:"M d, Y" }}</span>
                 </div>
-            </div>
-            <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
-                <span class="flex items-center gap-1">
-                    <i data-lucide="package" class="w-4 h-4"></i>
-                    {{ category.equipments.count }} items
-                </span>
-                <span>{{ category.created_at|date:"M d, Y"|default:"Recently added" }}</span>
             </div>
         </div>
         {% empty %}
-        <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
-            <i data-lucide="folder-open" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
-            <h3 class="text-xl font-semibold text-gray-600 mb-2">No categories found</h3>
-            <p class="text-gray-500 mb-6">Get started by adding your first equipment category.</p>
-            <a href="{% url 'equipment:category_create' %}" class="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl hover:opacity-90 transition-colors font-medium" style="background-color: var(--primary-color);">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-                Add First Category
+        <div class="col-span-full text-center py-12">
+            <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="folder-open" class="w-8 h-8 text-gray-400"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-600 mb-2">No categories found</h3>
+            <p class="text-gray-500 mb-4">Get started by adding your first category.</p>
+            <a href="{% url 'equipment:category_create' %}" class="inline-flex items-center px-4 py-2 rounded-lg text-white text-sm font-medium" style="background-color: var(--primary-color);">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Add Category
             </a>
         </div>
         {% endfor %}
     </div>
 
     {% if is_paginated %}
-    <div class="mt-8 flex justify-center">
-        <nav class="flex items-center gap-2">
+    <div class="mt-6 flex justify-center">
+        <nav class="flex items-center gap-1">
             {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 border border-gray-200 rounded-xl transition-colors text-gray-700 hover:border-blue-500 hover:text-blue-600">
+            <a href="?page={{ page_obj.previous_page_number }}" class="p-2 rounded-lg border hover:bg-gray-50">
                 <i data-lucide="chevron-left" class="w-4 h-4"></i>
             </a>
             {% endif %}
-
-            <span class="px-4 py-2 text-gray-600">
-                Page {{ page_obj.number }} of {{ paginator.num_pages }}
-            </span>
-
+            <span class="px-3 py-1.5 text-sm text-gray-600">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
             {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 border border-gray-200 rounded-xl transition-colors text-gray-700 hover:border-blue-500 hover:text-blue-600">
+            <a href="?page={{ page_obj.next_page_number }}" class="p-2 rounded-lg border hover:bg-gray-50">
                 <i data-lucide="chevron-right" class="w-4 h-4"></i>
             </a>
             {% endif %}
@@ -104,30 +105,20 @@
 </div>
 
 <style>
-    input:focus, select:focus {
-        outline: none;
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px var(--primary-color-alpha);
-    }
+    input:focus, select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-color-alpha); }
 </style>
-{% endblock %}
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    if (window.lucide) {
-        lucide.createIcons();
-    }
-});
-
+document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); });
 document.getElementById('searchInput').addEventListener('input', function(e) {
-    const searchTerm = e.target.value.toLowerCase();
-    const categoryCards = document.querySelectorAll('#categoriesGrid > div:not(.col-span-full)');
-    categoryCards.forEach(card => {
-        const categoryName = card.querySelector('h3').textContent.toLowerCase();
-        const categoryDesc = card.querySelector('p') ? card.querySelector('p').textContent.toLowerCase() : '';
-        card.style.display = (categoryName.includes(searchTerm) || categoryDesc.includes(searchTerm)) ? '' : 'none';
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('#categoriesGrid > div:not(.col-span-full)').forEach(card => {
+        const name = card.querySelector('h3').textContent.toLowerCase();
+        const desc = card.querySelector('p')?.textContent.toLowerCase() || '';
+        card.style.display = name.includes(term) || desc.includes(term) ? '' : 'none';
     });
 });
 </script>
+{% endblock %}
 {% endblock %}

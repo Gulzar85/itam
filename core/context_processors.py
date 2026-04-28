@@ -13,9 +13,23 @@ def business_context(request):
             is_read=False
         ).count()
 
+    primary_color = business.primary_color if business else '#DA291C'
+    accent_color = business.accent_color if business and business.accent_color else '#FFBD0A'
+
+    def hex_to_rgba(hex_color, alpha='33'):
+        if not hex_color or len(hex_color) != 7:
+            return f'#{primary_color[1:]}{alpha}'
+        return f'#{hex_color[1:]}{alpha}'
+
     return {
         'business_info': business,
         'unread_count': unread_notifications_count,
+        'theme_colors': {
+            'primary': primary_color,
+            'accent': accent_color,
+            'primary_alpha': hex_to_rgba(primary_color, '1A'),
+            'accent_alpha': hex_to_rgba(accent_color, '1A'),
+        },
     }
 
 
@@ -42,11 +56,6 @@ def page_context(request):
         'equipment:category_detail': {'title': 'Category Details', 'subtitle': 'View Category Info'},
         'equipment:category_create': {'title': 'Add Category', 'subtitle': 'Register New Category'},
         'equipment:category_update': {'title': 'Edit Category', 'subtitle': 'Update Category'},
-        'requests:manager_approvals': {'title': 'Approvals', 'subtitle': 'Pending Requests'},
-        'requests:detail': {'title': 'Request Details', 'subtitle': 'View Request Information'},
-        'requests:create': {'title': 'New Request', 'subtitle': 'Submit IT Equipment Request'},
-        'requests:equipment_assign': {'title': 'Assign Equipment', 'subtitle': 'Asset Assignment'},
-        'requests:assign_new': {'title': 'Assign Equipment', 'subtitle': 'Asset Assignment'},
         'requests:manager_approvals': {'title': 'Approvals', 'subtitle': 'Pending Requests'},
         'requests:detail': {'title': 'Request Details', 'subtitle': 'View Request Information'},
         'requests:create': {'title': 'New Request', 'subtitle': 'Submit IT Equipment Request'},

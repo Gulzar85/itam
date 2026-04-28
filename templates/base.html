@@ -38,9 +38,11 @@
         [x-cloak] { display: none !important; }
 
         :root {
-            --primary-color: {{ business_info.primary_color|default:"#3b82f6" }};
-            --secondary-color: {{ business_info.secondary_color|default:"#f9fafb" }};
-            --primary-color-alpha: {{ business_info.primary_color|default:"#3b82f6" }}33;
+            --primary-color: {{ theme_colors.primary|default:"#DA291C" }};
+            --secondary-color: {{ business_info.secondary_color|default:"#FFC72C" }};
+            --accent-color: {{ theme_colors.accent|default:"#FFBD0A" }};
+            --primary-color-alpha: {{ theme_colors.primary_alpha|default:"#DA291C1A" }};
+            --accent-color-alpha: {{ theme_colors.accent_alpha|default:"#FFBD0A1A" }};
         }
 
         .glass {
@@ -69,8 +71,14 @@
         .hover\:bg-custom-primary:hover { background-color: var(--primary-color) !important; }
         .hover\:text-custom-primary:hover { color: var(--primary-color) !important; }
 
+        .bg-custom-accent { background-color: var(--accent-color) !important; }
+        .text-custom-accent { color: var(--accent-color) !important; }
+        .border-custom-accent { border-color: var(--accent-color) !important; }
+        .hover\:bg-custom-accent:hover { background-color: var(--accent-color) !important; }
+        .hover\:text-custom-accent:hover { color: var(--accent-color) !important; }
+
         body {
-            background-color: var(--secondary-color);
+            background-color: #f9fafb;
         }
 
         /* Page Transitions */

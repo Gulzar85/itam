@@ -1,71 +1,72 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4">
-    <div class="mb-8">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-800">Equipment Inventory</h1>
-                <p class="text-gray-600 mt-1">Manage and track all IT assets</p>
+<div class="max-w-7xl mx-auto">
+    <!-- Header with gradient -->
+    <div class="mb-6 -mx-4 -mt-4 px-4 py-6 rounded-t-xl" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 80%, white) 100%);">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="text-white">
+                <h1 class="text-2xl md:text-3xl font-bold">Equipment Inventory</h1>
+                <p class="text-white/80 mt-1">Manage and track all IT assets</p>
             </div>
-            <div class="flex gap-3">
-                <a href="{% url 'requests:equipment_assign' %}" class="text-white px-4 py-2 rounded-lg hover:opacity-90 transition-colors flex items-center" style="background-color: var(--primary-color);">
+            <div class="flex gap-2">
+                <a href="{% url 'requests:equipment_assign' %}" class="text-white px-4 py-2 rounded-lg hover:opacity-90 transition-colors flex items-center text-sm font-medium" style="background-color: var(--primary-color);">
                     <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
-                    Assign Asset
+                    <span class="hidden sm:inline">Assign</span>
                 </a>
-                <a href="{% url 'equipment:equipment_create' %}" class="text-white px-4 py-2 rounded-lg hover:opacity-90 transition-colors flex items-center" style="background-color: var(--primary-color);">
+                <a href="{% url 'equipment:equipment_create' %}" class="text-white px-4 py-2 rounded-lg hover:opacity-90 transition-colors flex items-center text-sm font-medium" style="background-color: var(--primary-color);">
                     <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-                    Add Equipment
+                    <span class="hidden sm:inline">Add</span>
                 </a>
             </div>
         </div>
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl p-4 shadow-sm border">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-slate-500">Total Equipment</p>
-                    <h3 class="text-2xl font-bold text-slate-800">{{ total_count|default:"0" }}</h3>
+                    <p class="text-xs font-medium text-gray-500">Total</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ total_count|default:"0" }}</h3>
                 </div>
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--primary-color);">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--primary-color);">
                     <i data-lucide="package" class="w-5 h-5 text-white"></i>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="bg-white rounded-xl p-4 shadow-sm border">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-green-600">Available</p>
-                    <h3 class="text-2xl font-bold text-slate-800">{{ available_count|default:"0" }}</h3>
+                    <p class="text-xs font-medium text-green-600">Available</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ available_count|default:"0" }}</h3>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
                     <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="bg-white rounded-xl p-4 shadow-sm border">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-orange-600">Under Repair</p>
-                    <h3 class="text-2xl font-bold text-slate-800">{{ repairing_count|default:"0" }}</h3>
+                    <p class="text-xs font-medium text-orange-600">Repair</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ repairing_count|default:"0" }}</h3>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
                     <i data-lucide="wrench" class="w-5 h-5 text-orange-600"></i>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <div class="bg-white rounded-xl p-4 shadow-sm border">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-purple-600">Assigned</p>
-                    <h3 class="text-2xl font-bold text-slate-800">{{ assigned_count|default:"0" }}</h3>
+                    <p class="text-xs font-medium text-purple-600">Assigned</p>
+                    <h3 class="text-2xl font-bold text-gray-800">{{ assigned_count|default:"0" }}</h3>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
                     <i data-lucide="user-check" class="w-5 h-5 text-purple-600"></i>
                 </div>
             </div>

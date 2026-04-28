@@ -90,8 +90,8 @@
                                 {{ v.completion_rate }}%
                             </span>
                         </td>
-                        <td class="py-4 px-4 text-right">PKR {{ v.total_estimated|floatformat:0 }}</td>
-                        <td class="py-4 px-4 text-right">PKR {{ v.total_actual|floatformat:0 }}</td>
+                        <td class="py-4 px-4 text-right">PKR {{ v.total_estimated|floatformat:"0" }}</td>
+                        <td class="py-4 px-4 text-right">PKR {{ v.total_actual|floatformat:"0" }}</td>
                         <td class="py-4 px-4 text-center">
                             <span class="px-2 py-1 rounded-full text-xs font-bold {% if v.avg_cost_diff > 10 %}bg-red-100 text-red-700{% elif v.avg_cost_diff > 0 %}bg-amber-100 text-amber-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
                                 {% if v.avg_cost_diff > 0 %}+{% endif %}{{ v.avg_cost_diff }}%

@@ -13,4 +13,5 @@ urlpatterns = [
     path('mark-all-read/', views.MarkAllAsReadView.as_view(), name='mark_all_read'),
     path('archive/<uuid:pk>/', views.ArchiveNotificationView.as_view(), name='archive'),
     path('count/', views.NotificationCountView.as_view(), name='count'),
+    path('delete/<uuid:pk>/', views.DeleteNotificationView.as_view(), name='delete'),
 ]

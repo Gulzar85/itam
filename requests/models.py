@@ -2,7 +2,9 @@ import uuid
 from django.utils import timezone
 
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
+
+from core.models import SequenceCounter
 
 from equipment.models import Brand, Category, Equipment, Vendor
 
@@ -31,6 +33,8 @@ class Request(models.Model):
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     request_id = models.CharField(max_length=20, unique=True, editable=False, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     # Who is requesting?
     user = models.ForeignKey(
@@ -57,10 +61,6 @@ class Request(models.Model):
 
     reason = models.TextField(help_text="Zaroorat ya maslay ki tafseel")
 
-    # Timeline
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
     # IT Admin Assignment (Kis vendor ko diya gaya)
     assigned_vendor = models.ForeignKey(
         Vendor, on_delete=models.SET_NULL, null=True, blank=True)
@@ -78,16 +78,8 @@ class Request(models.Model):
     def generate_request_id(self):
         year = timezone.now().year
         prefix = 'REQ'
-        last_request = Request.objects.filter(request_id__startswith=f"{prefix}-{year}")\
-            .order_by('-request_id').first()
-
-        if last_request:
-            last_number = int(last_request.request_id.split('-')[-1])
-            new_number = str(last_number + 1).zfill(4)
-        else:
-            new_number = '0001'
-
-        return f"{prefix}-{year}-{new_number}"
+        next_value = SequenceCounter.get_next_value(prefix, year)
+        return f"{prefix}-{year}-{str(next_value).zfill(4)}"
 
     def save(self, *args, **kwargs):
         if not self.request_id:
@@ -104,6 +96,7 @@ class RequestLog(models.Model):
     new_status = models.CharField(max_length=20)
     remarks = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Log for REQ#{self.request.id} by {self.action_by}"
@@ -123,6 +116,8 @@ class Assignment(models.Model):
     )
     returned_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         indexes = [

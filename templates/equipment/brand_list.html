@@ -2,92 +2,90 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto">
-    <div class="mb-8">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-800">Equipment Brands</h1>
-                <p class="text-gray-600">Manage equipment brands and manufacturers</p>
+    <!-- Header with gradient -->
+    <div class="mb-6 -mx-4 -mt-4 px-4 py-6 rounded-t-xl" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 80%, white) 100%);">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="text-white">
+                <h1 class="text-2xl md:text-3xl font-bold">Brands</h1>
+                <p class="text-white/80 mt-1">Manage equipment brands</p>
             </div>
-            <a href="{% url 'equipment:brand_create' %}" class="text-white px-6 py-3 rounded-xl hover:opacity-90 transition-colors font-medium" style="background-color: var(--primary-color);">
-                <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>
+            <a href="{% url 'equipment:brand_create' %}" class="text-white px-4 py-2 rounded-lg hover:opacity-90 transition-colors flex items-center text-sm font-medium" style="background-color: var(--primary-color);">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
                 Add Brand
             </a>
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-4">
-        <div class="flex flex-col md:flex-row gap-4">
+    <!-- Search -->
+    <div class="bg-white rounded-xl p-4 shadow-sm border mb-4">
+        <div class="flex flex-col md:flex-row gap-3">
             <div class="flex-1">
                 <div class="relative">
-                    <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                    <input type="text" id="searchInput" placeholder="Search brands..." class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl outline-none transition-all bg-white/50" style="focus:ring-2; focus:ring-color: var(--primary-color);">
+                    <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="searchInput" placeholder="Search brands..." class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg outline-none transition-all">
                 </div>
             </div>
-            <div class="flex gap-2">
-                <select id="sortSelect" class="px-4 py-3 border border-gray-200 rounded-xl outline-none transition-all bg-white/50" style="focus:ring-2; focus:ring-color: var(--primary-color);">
-                    <option value="name">Sort by Name</option>
-                    <option value="created">Sort by Date Added</option>
-                </select>
-            </div>
+            <select id="sortSelect" class="px-4 py-2.5 border border-gray-200 rounded-lg outline-none transition-all bg-white">
+                <option value="name">Sort by Name</option>
+                <option value="created">Sort by Date</option>
+            </select>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="brandsGrid">
+    <!-- Brands Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="brandsGrid">
         {% for brand in object_list %}
-        <div class="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md border border-slate-100 transition-shadow">
-            <div class="flex items-start justify-between mb-4">
-                <div class="flex-1">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ brand.name }}</h3>
-                    {% if brand.description %}
-                    <p class="text-gray-600 text-sm line-clamp-2">{{ brand.description }}</p>
-                    {% endif %}
+        <div class="bg-white rounded-xl shadow-sm hover:shadow-md border transition-all group">
+            <div class="p-4">
+                <div class="flex items-start justify-between mb-3">
+                    <h3 class="text-lg font-semibold text-gray-800 truncate">{{ brand.name }}</h3>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <a href="{% url 'equipment:brand_detail' brand.pk %}" class="p-1.5 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-100">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </a>
+                        <a href="{% url 'equipment:brand_update' brand.pk %}" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-500 hover:bg-emerald-100">
+                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                        </a>
+                        <a href="{% url 'equipment:brand_delete' brand.pk %}" class="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </a>
+                    </div>
                 </div>
-                <div class="flex gap-2">
-                    <a href="{% url 'equipment:brand_detail' brand.pk %}" class="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 hover:text-blue-600 transition-colors">
-                        <i data-lucide="eye" class="w-4 h-4"></i>
-                    </a>
-                    <a href="{% url 'equipment:brand_update' brand.pk %}" class="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-500 hover:text-emerald-600 transition-colors">
-                        <i data-lucide="edit" class="w-4 h-4"></i>
-                    </a>
-                    <a href="{% url 'equipment:brand_delete' brand.pk %}" class="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-600 transition-colors">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </a>
+                {% if brand.description %}
+                <p class="text-gray-500 text-sm truncate mb-3">{{ brand.description }}</p>
+                {% endif %}
+                <div class="flex items-center justify-between text-xs text-gray-400 pt-3 border-t">
+                    <span>{{ brand.equipments.count }} items</span>
+                    <span>{{ brand.created_at|date:"M d, Y" }}</span>
                 </div>
-            </div>
-
-            <div class="flex items-center justify-between text-sm text-gray-500">
-                <span>{{ brand.equipments.count }} equipment items</span>
-                <span>Added {{ brand.created_at|date:"M j, Y" }}</span>
             </div>
         </div>
         {% empty %}
         <div class="col-span-full text-center py-12">
-            <i data-lucide="package" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
-            <h3 class="text-xl font-semibold text-gray-600 mb-2">No brands found</h3>
-            <p class="text-gray-500 mb-6">Get started by adding your first equipment brand.</p>
-            <a href="{% url 'equipment:brand_create' %}" class="text-white px-6 py-3 rounded-xl hover:opacity-90 transition-colors font-medium" style="background-color: var(--primary-color);">
-                <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>
-                Add First Brand
+            <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="tags" class="w-8 h-8 text-gray-400"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-600 mb-2">No brands found</h3>
+            <p class="text-gray-500 mb-4">Get started by adding your first brand.</p>
+            <a href="{% url 'equipment:brand_create' %}" class="inline-flex items-center px-4 py-2 rounded-lg text-white text-sm font-medium" style="background-color: var(--primary-color);">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Add Brand
             </a>
         </div>
         {% endfor %}
     </div>
 
     {% if is_paginated %}
-    <div class="mt-8 flex justify-center">
-        <nav class="flex items-center gap-2">
+    <div class="mt-6 flex justify-center">
+        <nav class="flex items-center gap-1">
             {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 border border-gray-200 rounded-xl transition-colors text-gray-700" style="hover:color: var(--primary-color);">
+            <a href="?page={{ page_obj.previous_page_number }}" class="p-2 rounded-lg border hover:bg-gray-50">
                 <i data-lucide="chevron-left" class="w-4 h-4"></i>
             </a>
             {% endif %}
-
-            <span class="px-4 py-2 text-gray-600">
-                Page {{ page_obj.number }} of {{ paginator.num_pages }}
-            </span>
-
+            <span class="px-3 py-1.5 text-sm text-gray-600">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
             {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 border border-gray-200 rounded-xl transition-colors text-gray-700" style="hover:color: var(--primary-color);">
+            <a href="?page={{ page_obj.next_page_number }}" class="p-2 rounded-lg border hover:bg-gray-50">
                 <i data-lucide="chevron-right" class="w-4 h-4"></i>
             </a>
             {% endif %}
@@ -97,30 +95,20 @@
 </div>
 
 <style>
-    input:focus, select:focus {
-        outline: none;
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px var(--primary-color-alpha);
-    }
+    input:focus, select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-color-alpha); }
 </style>
-{% endblock %}
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    if (window.lucide) {
-        lucide.createIcons();
-    }
-});
-
+document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); });
 document.getElementById('searchInput').addEventListener('input', function(e) {
-    const searchTerm = e.target.value.toLowerCase();
-    const brandCards = document.querySelectorAll('#brandsGrid > div:not(.col-span-full)');
-    brandCards.forEach(card => {
-        const brandName = card.querySelector('h3').textContent.toLowerCase();
-        const brandDesc = card.querySelector('p') ? card.querySelector('p').textContent.toLowerCase() : '';
-        card.style.display = (brandName.includes(searchTerm) || brandDesc.includes(searchTerm)) ? '' : 'none';
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('#brandsGrid > div:not(.col-span-full)').forEach(card => {
+        const name = card.querySelector('h3').textContent.toLowerCase();
+        const desc = card.querySelector('p')?.textContent.toLowerCase() || '';
+        card.style.display = name.includes(term) || desc.includes(term) ? '' : 'none';
     });
 });
 </script>
+{% endblock %}
 {% endblock %}

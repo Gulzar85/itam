@@ -94,7 +94,7 @@
             <p class="text-xs font-bold text-gray-400 uppercase">Damaged</p>
         </div>
         <div class="glass-card rounded-2xl p-4 text-center bg-custom-primary text-white">
-            <p class="text-xl font-black">PKR {{ total_value|floatformat:0 }}</p>
+            <p class="text-xl font-black">PKR {{ total_value|floatformat:"0" }}</p>
             <p class="text-xs font-bold opacity-80 uppercase">Total Value</p>
         </div>
     </div>
@@ -159,7 +159,7 @@
                                 <span class="text-gray-400">No Warranty</span>
                             {% endif %}
                         </td>
-                        <td class="py-3 px-2 text-right font-medium">{{ eq.purchase_cost|floatformat:0|default:"0" }}</td>
+                        <td class="py-3 px-2 text-right font-medium">{{ eq.purchase_cost|floatformat:"0"|default:"0" }}</td>
                         <td class="py-3 px-2">{{ eq.original_vendor|default:"-" }}</td>
                         <td class="py-3 px-2 whitespace-nowrap">{{ eq.purchase_date|date:"d M Y"|default:"-" }}</td>
                     </tr>

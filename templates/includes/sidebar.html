@@ -45,7 +45,7 @@
             {% endif %}
         </a>
 
-        {% if user.role == 'MANAGER' or user.role == 'IT_ADMIN' %}
+        {% if user.can_approve %}
         <div class="pt-4 border-t border-slate-800 mt-4 mb-2">
             <div class="sidebar-text text-[10px] text-slate-500 uppercase px-3 tracking-widest font-black">Management</div>
         </div>

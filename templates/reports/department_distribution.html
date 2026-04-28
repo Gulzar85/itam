@@ -32,7 +32,7 @@
             <p class="text-xs font-bold text-gray-400 uppercase">Assigned Equipment</p>
         </div>
         <div class="glass-card rounded-2xl p-4 text-center bg-custom-primary text-white">
-            <p class="text-2xl font-black">PKR {{ total_value|floatformat:0 }}</p>
+            <p class="text-2xl font-black">PKR {{ total_value|floatformat:"0" }}</p>
             <p class="text-xs font-bold opacity-80 uppercase">Total Value</p>
         </div>
     </div>
@@ -75,7 +75,7 @@
                         <td class="py-4 px-4 text-center">{{ d.total_users }}</td>
                         <td class="py-4 px-4 text-center font-bold text-blue-600">{{ d.assigned_count }}</td>
                         <td class="py-4 px-4 text-center">{{ d.avg_per_user }}</td>
-                        <td class="py-4 px-4 text-right font-medium">PKR {{ d.total_value|floatformat:0 }}</td>
+                        <td class="py-4 px-4 text-right font-medium">PKR {{ d.total_value|floatformat:"0" }}</td>
                         <td class="py-4 px-4 text-center">
                             <div class="w-full bg-gray-200 rounded-full h-2">
                                 <div class="bg-custom-primary h-2 rounded-full" style="width: {% widthratio d.equipment_count total_equipment 100 %}%"></div>

@@ -88,3 +88,16 @@ class NotificationCountView(LoginRequiredMixin, View):
             is_archived=False
         ).count()
         return JsonResponse({'count': count})
+
+
+class DeleteNotificationView(LoginRequiredMixin, View):
+    """Delete a notification"""
+
+    def post(self, request, pk):
+        notification = get_object_or_404(
+            Notification,
+            pk=pk,
+            recipient=request.user
+        )
+        notification.delete()
+        return JsonResponse({'status': 'success'})

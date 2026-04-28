@@ -10,7 +10,7 @@ class BusinessInfoForm(forms.ModelForm):
         model = BusinessInfo
         fields = [
             'name', 'logo', 'description', 'address', 'contact_email',
-            'contact_phone', 'website', 'primary_color', 'secondary_color', 'is_active'
+            'contact_phone', 'website', 'primary_color', 'secondary_color', 'accent_color', 'is_active'
         ]
         widgets = {
             'name': forms.TextInput(attrs={
@@ -47,6 +47,10 @@ class BusinessInfoForm(forms.ModelForm):
                 'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
                 'type': 'color'
             }),
+            'accent_color': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
+                'type': 'color'
+            }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500'
             }),
@@ -65,12 +69,14 @@ class BusinessInfoForm(forms.ModelForm):
             'website': 'Website',
             'primary_color': 'Primary Color',
             'secondary_color': 'Secondary Color',
+            'accent_color': 'Accent Color',
             'is_active': 'Active',
         }
         help_texts = {
             'logo': 'Upload a logo image (max 2MB). Recommended size: 200x200px',
-            'primary_color': 'Main brand color for buttons and accents',
-            'secondary_color': 'Background color for the application',
+            'primary_color': 'Main brand color (McDonald\'s Red: #DA291C)',
+            'secondary_color': 'Background color (McDonald\'s Yellow: #FFC72C)',
+            'accent_color': 'Highlight color for badges and accents',
             'is_active': 'Enable to show this business info publicly',
         }
 
