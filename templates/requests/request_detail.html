@@ -20,22 +20,9 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold
-                {% if req.status == 'COMPLETED' %}bg-emerald-50 text-emerald-700 border border-emerald-200
-                {% elif req.status == 'REJECTED' %}bg-rose-50 text-rose-700 border border-rose-200
-                {% elif req.status == 'IN_PROGRESS' %}bg-amber-50 text-amber-700 border border-amber-200
-                {% else %}bg-slate-50 text-slate-600 border border-slate-200{% endif %}">
-                {% if req.status == 'COMPLETED' %}
-                    <i data-lucide="check-circle" class="w-4 h-4"></i>
-                {% elif req.status == 'REJECTED' %}
-                    <i data-lucide="x-circle" class="w-4 h-4"></i>
-                {% elif req.status == 'IN_PROGRESS' %}
-                    <i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
-                {% else %}
-                    <i data-lucide="clock" class="w-4 h-4"></i>
-                {% endif %}
-                {{ req.get_status_display }}
-            </span>
+                    {% with status=req.status status_choices=req.STATUS_CHOICES %}
+                        {% include 'includes/status_badge.html' %}
+                    {% endwith %}
         </div>
     </div>
 
@@ -68,13 +55,19 @@
 
                         <div>
                             <p class="text-xs font-medium text-slate-400 uppercase mb-1">Priority</p>
-                            <span class="inline-flex px-3 py-1.5 rounded-lg text-xs font-semibold
-                                {% if req.priority == 'CRITICAL' %}bg-rose-100 text-rose-700
-                                {% elif req.priority == 'HIGH' %}bg-orange-100 text-orange-700
-                                {% elif req.priority == 'MEDIUM' %}bg-amber-100 text-amber-700
+                            {% with priority=req.priority %}
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold
+                                {% if priority == 'CRITICAL' %}bg-rose-100 text-rose-700
+                                {% elif priority == 'HIGH' %}bg-orange-100 text-orange-700
+                                {% elif priority == 'MEDIUM' %}bg-amber-100 text-amber-700
                                 {% else %}bg-slate-100 text-slate-600{% endif %}">
+                                {% if priority == 'CRITICAL' %}<i data-lucide="alert-octagon" class="w-3 h-3"></i>
+                                {% elif priority == 'HIGH' %}<i data-lucide="alert-triangle" class="w-3 h-3"></i>
+                                {% elif priority == 'MEDIUM' %}<i data-lucide="alert-circle" class="w-3 h-3"></i>
+                                {% else %}<i data-lucide="info" class="w-3 h-3"></i>{% endif %}
                                 {{ req.get_priority_display }}
                             </span>
+                            {% endwith %}
                         </div>
 
                         {% if req.equipment %}
