@@ -19,9 +19,11 @@
     <style>
         :root {
             --primary-color: {{ theme_colors.primary|default:"#DA291C" }};
-            --secondary-color: {{ theme_colors.accent|default:"#FFBD0A" }};
+            --secondary-color: {{ theme_colors.secondary|default:"#FFBD0A" }};
             --primary-color-alpha: {{ theme_colors.primary_alpha|default:"#DA291C1A" }};
-            --secondary-color-alpha: {{ theme_colors.accent_alpha|default:"#FFBD0A1A" }};
+            --secondary-color-alpha: {{ theme_colors.secondary_alpha|default:"#FFBD0A1A" }};
+            --accent-color: {{ theme_colors.accent|default:"#FFBD0A" }};
+            --accent-color-alpha: {{ theme_colors.accent_alpha|default:"#FFBD0A1A" }};
         }
     </style>
     

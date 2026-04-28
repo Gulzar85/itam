@@ -5,29 +5,32 @@ from notifications.models import Notification
 
 def business_context(request):
     business = BusinessInfo.objects.filter(is_active=True).first()
-
+    
     unread_notifications_count = 0
     if request.user.is_authenticated:
         unread_notifications_count = Notification.objects.filter(
             recipient=request.user,
             is_read=False
         ).count()
-
+    
     primary_color = business.primary_color if business else '#DA291C'
-    accent_color = business.accent_color if business and business.accent_color else '#FFBD0A'
-
+    secondary_color = business.secondary_color if business and business.secondary_color else '#FFBD0A'
+    accent_color = business.accent_color if business and business.accent_color else secondary_color
+    
     def hex_to_rgba(hex_color, alpha='33'):
         if not hex_color or len(hex_color) != 7:
             return f'#{primary_color[1:]}{alpha}'
         return f'#{hex_color[1:]}{alpha}'
-
+    
     return {
         'business_info': business,
         'unread_count': unread_notifications_count,
         'theme_colors': {
             'primary': primary_color,
+            'secondary': secondary_color,
             'accent': accent_color,
             'primary_alpha': hex_to_rgba(primary_color, '1A'),
+            'secondary_alpha': hex_to_rgba(secondary_color, '1A'),
             'accent_alpha': hex_to_rgba(accent_color, '1A'),
         },
     }
