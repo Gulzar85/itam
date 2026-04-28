@@ -146,7 +146,9 @@ function markAllAsRead() {
     });
 }
 
-// ESC key support for delete modal
+// Export functions for use in other scripts
+window.getCSRFToken = getCSRFToken;
+window.getCSRFHeader = getCSRFHeader;
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeDeleteModal();

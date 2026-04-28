@@ -27,20 +27,28 @@ function setupNotifications() {
     });
 }
 
-// Show toast notification
+// Show toast notification with consistent theme
 function showToast(message, type = 'success') {
     const toastContainer = document.getElementById('toastContainer') || document.body;
     const toast = document.createElement('div');
-    toast.className = `fixed bottom-5 right-5 z-[60] glass px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border-l-4 animate-bounce-in notification-toast ${
+    
+    // Consistent theme: primary color border, white background
+    toast.className = `fixed bottom-5 right-5 z-[60] bg-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border-l-4 animate-bounce-in notification-toast ${
         type === 'success' ? 'border-green-500' : 'border-red-500'
     }`;
+    
+    // Icon based on type
+    const icon = type === 'success' ? 'check-circle' : 'alert-circle';
+    const iconColor = type === 'success' ? 'text-green-500' : 'text-red-500';
+    const title = type === 'success' ? 'Success' : 'Error';
+    
     toast.innerHTML = `
-        <div class="${type === 'success' ? 'text-green-500' : 'text-red-500'}">
-            <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-6 h-6"></i>
+        <div class="${iconColor}">
+            <i data-lucide="${icon}" class="w-6 h-6"></i>
         </div>
         <div class="flex flex-col">
             <span class="text-xs font-black uppercase tracking-wider" style="color: var(--primary-color)">
-                ${type === 'success' ? 'Success' : 'Error'}
+                ${title}
             </span>
             <span class="font-medium text-gray-800">${message}</span>
         </div>
@@ -48,6 +56,7 @@ function showToast(message, type = 'success') {
             <i data-lucide="x" class="w-4 h-4"></i>
         </button>
     `;
+    
     toastContainer.appendChild(toast);
     
     if (window.lucide) {

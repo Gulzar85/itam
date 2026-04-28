@@ -140,20 +140,9 @@
                             Overdue
                         </span>
                         {% endif %}
-                    </div>
-                </div>
             </div>
         </div>
-        {% empty %}
-        <div class="bg-white p-12 rounded-2xl text-center border border-slate-100">
-            <i data-lucide="bell-off" class="w-16 h-16 mx-auto mb-4 text-gray-400"></i>
-            <h3 class="text-xl font-semibold text-gray-600 mb-2">No notifications</h3>
-            <p class="text-gray-500">You're all caught up! New notifications will appear here.</p>
-        </div>
-        {% endfor %}
     </div>
-
-    {% include 'includes/pagination.html' with page_obj=page_obj paginator=paginator %}
 </div>
 
 {% block extra_js %}
