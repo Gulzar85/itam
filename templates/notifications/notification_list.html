@@ -181,6 +181,10 @@
 
 {% block extra_js %}
 <script src="{% static 'js/notifications.js' %}"></script>
+<script>
+    // Define URLs that need Django template rendering
+    const MARK_ALL_READ_URL = '{% url "notifications:mark_all_read" %}';
+</script>
 {% endblock %}
 
 <!-- Confirm Delete Modal -->
@@ -273,7 +277,7 @@ function markAsRead(notificationId) {
 
 // Mark all notifications as read
 function markAllAsRead() {
-    fetch('{% url "notifications:mark_all_read" %}', {
+    fetch(MARK_ALL_READ_URL, {
         method: 'POST',
         headers: {
             'X-CSRFToken': '{{ csrf_token }}',

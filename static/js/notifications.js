@@ -5,6 +5,18 @@
 
 let pendingDeleteId = null;
 
+// Get CSRF token from cookie
+function getCSRFToken() {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') {
+            return value;
+        }
+    }
+    return '';
+}
+
 // Filter notifications
 function applyFilters() {
     const typeFilter = document.getElementById('filterType').value;
@@ -59,7 +71,7 @@ function deleteNotification() {
     fetch(`/notifications/delete/${notificationId}/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
+            'X-CSRFToken': getCSRFToken(),
             'Content-Type': 'application/json'
         }
     })
@@ -82,7 +94,7 @@ function markAsRead(notificationId) {
     fetch(`/notifications/mark-read/${notificationId}/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
+            'X-CSRFToken': getCSRFToken(),
             'Content-Type': 'application/json'
         }
     })
@@ -102,10 +114,10 @@ function markAsRead(notificationId) {
 
 // Mark all notifications as read
 function markAllAsRead() {
-    fetch('{% url "notifications:mark_all_read" %}', {
+    fetch(MARK_ALL_READ_URL, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
+            'X-CSRFToken': getCSRFToken(),
             'Content-Type': 'application/json'
         }
     })
