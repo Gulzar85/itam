@@ -1,0 +1,30 @@
+{% comment %}
+    Reusable pagination component
+    Usage: {% include 'includes/pagination.html' with page_obj=page_obj paginator=paginator %}
+{% endcomment %}
+
+{% if is_paginated %}
+<div class="mt-8 flex justify-center">
+    <nav class="flex items-center gap-2 bg-white/50 p-1 rounded-2xl border border-white/60">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+           class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white text-gray-600 transition-all" 
+           style="hover:color: var(--primary-color);">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
+        {% endif %}
+        
+        <div class="px-4 text-sm font-bold text-gray-700">
+            Page <span style="color: var(--primary-color);">{{ page_obj.number }}</span> <span class="text-gray-400 mx-1">/</span> {{ paginator.num_pages }}
+        </div>
+        
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+           class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white text-gray-600 transition-all" 
+           style="hover:color: var(--primary-color);">
+            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+        </a>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}

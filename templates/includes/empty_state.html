@@ -1,0 +1,27 @@
+{% load static %}
+
+{% comment %}
+    Reusable empty state component
+    Usage: {% include 'includes/empty_state.html' with icon='monitor-off' title='No Equipment' message='Add your first item' action_url=create_url action_text='Add Equipment' action_icon='plus' %}
+{% endcomment %}
+
+<div class="bg-white p-12 rounded-2xl text-center border border-slate-100">
+    <i data-lucide="{{ icon|default:'inbox' }}" class="w-16 h-16 mx-auto mb-4 text-slate-300"></i>
+    <h3 class="text-xl font-bold text-slate-600 mb-2">{{ title|default:'No items found' }}</h3>
+    <p class="text-slate-500 mb-6">{{ message|default:'There are no items to display.' }}</p>
+    
+    {% if action_url %}
+    <a href="{{ action_url }}" class="inline-flex items-center gap-2 text-white px-6 py-2.5 rounded-xl hover:opacity-90 transition-all font-bold" style="background-color: var(--primary-color);">
+        {% if action_icon %}
+        <i data-lucide="{{ action_icon }}" class="w-4 h-4"></i>
+        {% endif %}
+        {{ action_text|default:'Create New' }}
+    </a>
+    {% endif %}
+</div>
+
+<script>
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+</script>
