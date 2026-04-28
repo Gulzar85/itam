@@ -156,23 +156,23 @@
     {% include 'includes/pagination.html' with page_obj=page_obj paginator=paginator %}
 
     <!-- Confirm Delete Modal -->
-    <div id="confirmDeleteModal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md">
-            <div class="bg-white rounded-2xl shadow-2xl p-6 m-4">
+    <div id="confirmDeleteModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+        <div class="relative w-full max-w-md animate-scale-in">
+            <div class="bg-white rounded-2xl shadow-2xl p-6">
                 <div class="flex items-center gap-4 mb-4">
-                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                         <i data-lucide="trash-2" class="w-6 h-6 text-red-600"></i>
                     </div>
-                    <div>
+                    <div class="flex-1 min-w-0">
                         <h3 class="text-lg font-bold text-slate-800">Delete Notification</h3>
                         <p class="text-sm text-slate-500">This action cannot be undone</p>
                     </div>
                 </div>
                 <p class="text-slate-600 mb-6">Are you sure you want to delete this notification? This action cannot be undone.</p>
                 <div class="flex gap-3">
-                    <button onclick="closeDeleteModal()" class="flex-1 py-3 rounded-xl font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
-                    <button onclick="deleteNotification()" class="flex-1 py-3 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700">Delete</button>
+                    <button onclick="closeDeleteModal()" class="flex-1 py-3 rounded-xl font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">Cancel</button>
+                    <button onclick="deleteNotification()" class="flex-1 py-3 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors">Delete</button>
                 </div>
             </div>
         </div>
