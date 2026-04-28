@@ -17,6 +17,14 @@ function getCSRFToken() {
     return '';
 }
 
+// Get CSRF token for header (Django expects X-CSRFToken)
+function getCSRFHeader() {
+    return {
+        'X-CSRFToken': getCSRFToken(),
+        'Content-Type': 'application/json'
+    };
+}
+
 // Filter notifications
 function applyFilters() {
     const typeFilter = document.getElementById('filterType').value;
@@ -70,10 +78,7 @@ function deleteNotification() {
     
     fetch(`/notifications/delete/${notificationId}/`, {
         method: 'POST',
-        headers: {
-            'X-CSRFToken': getCSRFToken(),
-            'Content-Type': 'application/json'
-        }
+        headers: getCSRFHeader()
     })
     .then(response => response.json())
     .then(data => {
@@ -97,10 +102,7 @@ function deleteNotification() {
 function markAsRead(notificationId) {
     fetch(`/notifications/mark-read/${notificationId}/`, {
         method: 'POST',
-        headers: {
-            'X-CSRFToken': getCSRFToken(),
-            'Content-Type': 'application/json'
-        }
+        headers: getCSRFHeader()
     })
     .then(response => response.json())
     .then(data => {
@@ -124,10 +126,7 @@ function markAsRead(notificationId) {
 function markAllAsRead() {
     fetch(MARK_ALL_READ_URL, {
         method: 'POST',
-        headers: {
-            'X-CSRFToken': getCSRFToken(),
-            'Content-Type': 'application/json'
-        }
+        headers: getCSRFHeader()
     })
     .then(response => response.json())
     .then(data => {
