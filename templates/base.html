@@ -15,6 +15,16 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link rel="icon" type="image/png" href="{% if business_info.logo %}{{ business_info.logo.url }}{% else %}{% static 'favicon.png' %}{% endif %}">     
     
+    <!-- Set CSS variables from context processor -->
+    <style>
+        :root {
+            --primary-color: {{ theme_colors.primary|default:"#DA291C" }};
+            --secondary-color: {{ theme_colors.accent|default:"#FFBD0A" }};
+            --primary-color-alpha: {{ theme_colors.primary_alpha|default:"#DA291C1A" }};
+            --secondary-color-alpha: {{ theme_colors.accent_alpha|default:"#FFBD0A1A" }};
+        }
+    </style>
+    
     <script>
         // CRITICAL: Yeh Tailwind ko batata hai ke custom-primary ka matlab CSS variable hai
         tailwind.config = {

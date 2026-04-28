@@ -140,10 +140,45 @@
                             Overdue
                         </span>
                         {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="bg-white p-12 rounded-2xl text-center border border-slate-100">
+            <i data-lucide="bell-off" class="w-16 h-16 mx-auto mb-4 text-gray-400"></i>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">No notifications</h3>
+            <p class="text-gray-500">You're all caught up! New notifications will appear here.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% include 'includes/pagination.html' with page_obj=page_obj paginator=paginator %}
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirmDeleteModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md">
+            <div class="bg-white rounded-2xl shadow-2xl p-6 m-4">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                        <i data-lucide="trash-2" class="w-6 h-6 text-red-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">Delete Notification</h3>
+                        <p class="text-sm text-slate-500">This action cannot be undone</p>
+                    </div>
+                </div>
+                <p class="text-slate-600 mb-6">Are you sure you want to delete this notification? This action cannot be undone.</p>
+                <div class="flex gap-3">
+                    <button onclick="closeDeleteModal()" class="flex-1 py-3 rounded-xl font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button onclick="deleteNotification()" class="flex-1 py-3 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700">Delete</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'js/notifications.js' %}"></script>
@@ -151,27 +186,4 @@
     // Define URLs that need Django template rendering
     const MARK_ALL_READ_URL = '{% url "notifications:mark_all_read" %}';
 </script>
-{% endblock %}
-
-<!-- Confirm Delete Modal -->
-<div id="confirmDeleteModal" class="fixed inset-0 z-50 hidden">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md">
-        <div class="bg-white rounded-2xl shadow-2xl p-6 m-4">
-            <div class="flex items-center gap-4 mb-4">
-                <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                    <i data-lucide="trash-2" class="w-6 h-6 text-red-600"></i>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold text-slate-800">Delete Notification</h3>
-                    <p class="text-sm text-slate-500">This action cannot be undone</p>
-                </div>
-            </div>
-            <p class="text-slate-600 mb-6">Are you sure you want to delete this notification? This action cannot be undone.</p>
-            <div class="flex gap-3">
-                <button onclick="closeDeleteModal()" class="flex-1 py-3 rounded-xl font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
-                <button onclick="deleteNotification()" class="flex-1 py-3 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700">Delete</button>
-            </div>
-        </div>
-</div>
 {% endblock %}

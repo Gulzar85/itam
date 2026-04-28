@@ -1,18 +1,27 @@
-INFO "GET /notifications/ HTTP/1.1" 200 73569
-INFO "GET /static/js/notifications.js HTTP/1.1" 200 0
-INFO "GET /inventory/equipment/ HTTP/1.1" 200 72022
-INFO "GET /static/js/equipment.js HTTP/1.1" 200 0
+TemplateSyntaxError at /notifications/
 
-All previous errors fixed:
-- FIXED: /notifications/{% url "notifications:mark_all_read" %} 404 error
-- FIXED: CSRF token 'X-Csrftoken' incorrect length (now using 'X-CSRFToken')
-- FIXED: Notification filters now working (type, priority, read status)
-- FIXED: Duplicate confirm delete modal removed
-- FIXED: Template syntax errors (unclosed blocks)
-- FIXED: views.py syntax errors (missing parentheses)
+Invalid block tag on line 177: 'endblock', expected 'empty' or 'endfor'. Did you forget to register or load this tag?
 
-Commits:
-- f0cfc54: Fix template errors - add load static and close content block
-- 76dc88f: Fix JavaScript errors - move Django template tags out of external JS
-- bac3e26: Fix notification system - filters, CSRF, views, and templates
-- fd8f069: Fix CSRF token header case sensitivity
+Request Method: 	GET
+Request URL: 	http://127.0.0.1:8000/notifications/
+Django Version: 	6.0.4
+Exception Type: 	TemplateSyntaxError
+Exception Value: 	
+
+Invalid block tag on line 177: 'endblock', expected 'empty' or 'endfor'. Did you forget to register or load this tag?
+
+Exception Location: 	F:\contact\ITAM\.venv\Lib\site-packages\django\template\base.py, line 634, in invalid_block_tag
+Raised during: 	notifications.views.NotificationListView
+Python Executable: 	F:\contact\ITAM\.venv\Scripts\python.exe
+Python Version: 	3.12.5
+Python Path: 	
+
+['F:\\contact\\ITAM',
+ 'C:\\Python312\\python312.zip',
+ 'C:\\Python312\\DLLs',
+ 'C:\\Python312\\Lib',
+ 'C:\\Python312',
+ 'F:\\contact\\ITAM\\.venv',
+ 'F:\\contact\\ITAM\\.venv\\Lib\\site-packages']
+
+Server time: 	Tue, 28 Apr 2026 14:08:41 +0500
