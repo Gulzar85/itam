@@ -52,7 +52,7 @@
 
     <div class="space-y-4 stagger-children" id="notificationList">
         {% for notification in notifications %}
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 {% if not notification.is_read %}border-l-4{% endif %} hover:shadow-lg transition-all duration-300 animate-fade-in-up" {% if not notification.is_read %}style="border-left-color: var(--primary-color);"{% endif %}>
+        <div data-notification-id="{{ notification.id }}" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 {% if not notification.is_read %}border-l-4{% endif %} hover:shadow-lg transition-all duration-300 animate-fade-in-up" {% if not notification.is_read %}style="border-left-color: var(--primary-color);"{% endif %}>
             <div class="flex items-start gap-4">
                 <div class="flex-shrink-0">
                     <div class="w-12 h-12 rounded-xl flex items-center justify-center 
@@ -156,23 +156,62 @@
     {% include 'includes/pagination.html' with page_obj=page_obj paginator=paginator %}
 
     <!-- Confirm Delete Modal -->
-    <div id="confirmDeleteModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
-        <div class="relative w-full max-w-md animate-scale-in">
-            <div class="bg-white rounded-2xl shadow-2xl p-6">
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                        <i data-lucide="trash-2" class="w-6 h-6 text-red-600"></i>
+    <div id="confirmDeleteModal"
+         class="fixed inset-0 z-50"
+         x-data="{ open: false }"
+         x-show="open"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        <!-- Full page backdrop -->
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-md" onclick="closeDeleteModal()"></div>
+        <!-- Modal content centered on full page -->
+        <div class="fixed inset-0 flex items-center justify-center p-4"
+             x-show="open"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+            <div class="relative w-full max-w-md">
+                <div class="bg-white rounded-2xl shadow-2xl p-6">
+                    <div class="flex items-start gap-4 mb-4">
+                        <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 animate-pulse">
+                            <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-bold text-slate-800">Delete Notification</h3>
+                            <p class="text-sm text-slate-500 mt-1">This action cannot be undone</p>
+                        </div>
+                        <button onclick="closeDeleteModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <h3 class="text-lg font-bold text-slate-800">Delete Notification</h3>
-                        <p class="text-sm text-slate-500">This action cannot be undone</p>
+                    <div class="bg-red-50 border border-red-100 rounded-xl p-4 mb-6">
+                        <p class="text-sm text-red-800">
+                            <i data-lucide="info" class="w-4 h-4 inline mr-2"></i>
+                            Are you sure you want to delete this notification? This action cannot be undone.
+                        </p>
                     </div>
-                </div>
-                <p class="text-slate-600 mb-6">Are you sure you want to delete this notification? This action cannot be undone.</p>
-                <div class="flex gap-3">
-                    <button onclick="closeDeleteModal()" class="flex-1 py-3 rounded-xl font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">Cancel</button>
-                    <button onclick="deleteNotification()" class="flex-1 py-3 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors">Delete</button>
+                    <div class="flex gap-3">
+                        <button id="cancelDeleteBtn" onclick="closeDeleteModal()"
+                                class="flex-1 py-3 rounded-xl font-semibold border-2 border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200">
+                            <i data-lucide="arrow-left" class="w-4 h-4 inline mr-2"></i>
+                            Cancel
+                        </button>
+                        <button id="confirmDeleteBtn" onclick="deleteNotification()"
+                                class="flex-1 py-3 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700 hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i data-lucide="trash-2" class="w-4 h-4" id="deleteIcon"></i>
+                            <span id="deleteButtonText">Delete</span>
+                            <div id="deleteSpinner" class="hidden">
+                                <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -182,8 +221,127 @@
 
 {% block extra_js %}
 <script src="{% static 'js/notifications.js' %}"></script>
-<script>
-    // Define URLs that need Django template rendering
-    const MARK_ALL_READ_URL = '{% url "notifications:mark_all_read" %}';
-</script>
+    <script>
+        // Define URLs that need Django template rendering
+        const MARK_ALL_READ_URL = '{% url "notifications:mark_all_read" %}';
+
+        // Updated delete modal functions with Alpine.js
+        let notificationToDelete = null;
+
+        function confirmDelete(notificationId) {
+            notificationToDelete = notificationId;
+            const modal = document.getElementById('confirmDeleteModal');
+            modal.classList.remove('hidden');
+            // Trigger Alpine.js show
+            const alpineData = Alpine.$data(modal);
+            if (alpineData) {
+                alpineData.open = true;
+            }
+        }
+
+        function closeDeleteModal() {
+            const modal = document.getElementById('confirmDeleteModal');
+            const alpineData = Alpine.$data(modal);
+            if (alpineData) {
+                alpineData.open = false;
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            } else {
+                modal.classList.add('hidden');
+            }
+            notificationToDelete = null;
+        }
+
+        function deleteNotification() {
+            if (!notificationToDelete) return;
+
+            // Show loading state
+            const btn = document.getElementById('confirmDeleteBtn');
+            const icon = document.getElementById('deleteIcon');
+            const text = document.getElementById('deleteButtonText');
+            const spinner = document.getElementById('deleteSpinner');
+
+            btn.disabled = true;
+            icon.classList.add('hidden');
+            text.textContent = 'Deleting...';
+            spinner.classList.remove('hidden');
+
+            fetch(`/notifications/delete/${notificationToDelete}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Fade out the notification element
+                    const notificationElement = document.querySelector(`[data-notification-id="${notificationToDelete}"]`);
+                    if (notificationElement) {
+                        notificationElement.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        notificationElement.style.opacity = '0';
+                        notificationElement.style.transform = 'translateX(20px)';
+                        setTimeout(() => {
+                            notificationElement.remove();
+                            // Check if no notifications left
+                            const remaining = document.querySelectorAll('[data-notification-id]');
+                            if (remaining.length === 0) {
+                                location.reload(); // Reload only if no notifications left
+                            }
+                        }, 300);
+                    }
+                    closeDeleteModal();
+
+                    // Show success toast if available
+                    if (window.showToast) {
+                        window.showToast('Notification deleted successfully', 'success');
+                    }
+                } else {
+                    resetDeleteButton();
+                    if (window.showToast) {
+                        window.showToast('Error deleting notification', 'error');
+                    } else {
+                        alert('Error deleting notification');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resetDeleteButton();
+                if (window.showToast) {
+                    window.showToast('An error occurred', 'error');
+                } else {
+                    alert('Error deleting notification');
+                }
+            });
+        }
+
+        function resetDeleteButton() {
+            const btn = document.getElementById('confirmDeleteBtn');
+            const icon = document.getElementById('deleteIcon');
+            const text = document.getElementById('deleteButtonText');
+            const spinner = document.getElementById('deleteSpinner');
+
+            btn.disabled = false;
+            icon.classList.remove('hidden');
+            text.textContent = 'Delete';
+            spinner.classList.add('hidden');
+        }
+
+        // Helper function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
 {% endblock %}

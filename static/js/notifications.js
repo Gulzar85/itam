@@ -3,8 +3,6 @@
  * ITAM - IT Asset Management
  */
 
-let pendingDeleteId = null;
-
 // Get CSRF token from cookie
 function getCSRFToken() {
     const cookies = document.cookie.split(';');
@@ -57,46 +55,8 @@ function applyFilters() {
     window.location.search = params.toString();
 }
 
-// Confirm delete
-function confirmDelete(notificationId) {
-    pendingDeleteId = notificationId;
-    document.getElementById('confirmDeleteModal').classList.remove('hidden');
-    if (window.lucide) {
-        lucide.createIcons();
-    }
-}
-
-function closeDeleteModal() {
-    document.getElementById('confirmDeleteModal').classList.add('hidden');
-    pendingDeleteId = null;
-}
-
-function deleteNotification() {
-    if (!pendingDeleteId) return;
-    const notificationId = pendingDeleteId;
-    closeDeleteModal();
-    
-    fetch(`/notifications/delete/${notificationId}/`, {
-        method: 'POST',
-        headers: getCSRFHeader()
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            location.reload();
-        } else {
-            if (window.showToast) {
-                window.showToast('Error deleting notification', 'error');
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        if (window.showToast) {
-            window.showToast('An error occurred', 'error');
-        }
-    });
-}
+// Confirm delete - now handled by Alpine.js in template
+// These functions are defined in the template script with Alpine.js integration
 
 // Mark single notification as read
 function markAsRead(notificationId) {
@@ -149,11 +109,6 @@ function markAllAsRead() {
 // Export functions for use in other scripts
 window.getCSRFToken = getCSRFToken;
 window.getCSRFHeader = getCSRFHeader;
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeDeleteModal();
-    }
-});
 
 // Initialize filter dropdowns if they exist
 document.addEventListener('DOMContentLoaded', () => {
