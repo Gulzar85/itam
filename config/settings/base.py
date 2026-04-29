@@ -14,7 +14,7 @@ SECRET_KEY = env.str('SECRET_KEY')
 if not SECRET_KEY:
     raise ImproperlyConfigured("SECRET_KEY must be set in environment variables or .env file")
 DEBUG = env.bool('DEBUG', default=False)
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])  # Update with actual hosts in production
 
 INSTALLED_APPS = [
     'jazzmin',
