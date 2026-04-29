@@ -90,7 +90,7 @@ document.addEventListener('keydown', (e) => {
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', function() {
     setupNotifications();
-    
+
     // Add skip navigation link if not exists
     if (!document.querySelector('.skip-to-content')) {
         const skipLink = document.createElement('a');
@@ -99,6 +99,24 @@ document.addEventListener('DOMContentLoaded', function() {
         skipLink.textContent = 'Skip to main content';
         document.body.prepend(skipLink);
     }
+
+    // Initialize Lucid icons after DOM ready
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+});
+
+// Re-initialize icons when Alpine.js updates the DOM
+document.addEventListener('alpine:initialized', () => {
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+
+    // Watch for DOM changes (Alpine updates)
+    const observer = new MutationObserver(() => {
+        if (window.lucide) lucide.createIcons();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
 });
 
 // ESC key handler for modals
