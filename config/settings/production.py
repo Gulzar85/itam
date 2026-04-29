@@ -1,3 +1,4 @@
+from typing import cast
 import os
 from pathlib import Path
 
@@ -29,7 +30,11 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = False
 SECURE_HSTS_PRELOAD = False
 
 # Allowed hosts - update with your server IP/domain
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])  # Update with your server IP/domain for production
+# Update with your server IP/domain for production
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
+
+if not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 # Logging for production
 logs_dir = BASE_DIR / 'logs'
