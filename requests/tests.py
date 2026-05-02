@@ -324,7 +324,7 @@ class RequestViewsTest(TestCase):
         self.client.login(username='employee', password='testpass123')
 
         # Try to access assignment create view
-        response = self.client.get(reverse('requests:assign_new'))
+        response = self.client.get(reverse('requests:equipment_assign'))
         self.assertEqual(response.status_code, 403)  # Forbidden
 
 
@@ -337,6 +337,7 @@ class PermissionsTest(TestCase):
         mixin = ITAdminRequiredMixin()
         user = User.objects.create_user(
             username="admin",
+            email="admin2@test.com",
             password="pass",
             role="IT_ADMIN"
         )
@@ -362,11 +363,13 @@ class PermissionsTest(TestCase):
         # Create manager with team members
         manager = User.objects.create_user(
             username="manager2",
+            email="manager2@test.com",
             password="pass",
             role="EMPLOYEE"
         )
         User.objects.create_user(
             username="employee2",
+            email="employee2@test.com",
             password="pass",
             manager=manager
         )

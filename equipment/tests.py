@@ -141,7 +141,8 @@ class EquipmentModelTest(TestCase):
 
     def test_generate_tracking_id(self):
         """Test tracking ID generation"""
-        tid = self.equipment.generate_tracking_id()
+        from services.equipment_service import EquipmentService
+        tid = EquipmentService.generate_tracking_id()
         self.assertIn("EQ-", tid)
         self.assertIn(str(date.today().year), tid)
 

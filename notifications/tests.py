@@ -171,14 +171,16 @@ class NotificationViewsTest(TestCase):
         response = self.client.post(
             reverse('notifications:mark_read', kwargs={'pk': notification.id})
         )
-        self.assertEqual(response.status_code, 302)  # Redirect
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'success')
         notification.refresh_from_db()
         self.assertTrue(notification.is_read)
 
     def test_mark_all_read_view(self):
         """Test marking all notifications as read"""
         response = self.client.post(reverse('notifications:mark_all_read'))
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'success')
         unread_count = Notification.objects.filter(
             recipient=self.user,
             is_read=False

@@ -69,31 +69,31 @@ class SocialMediaLinkModelTest(TestCase):
         )
         self.link = SocialMediaLink.objects.create(
             business=self.business,
-            platform="FACEBOOK",
+            platform="facebook",
             url="https://facebook.com/test"
         )
 
     def test_social_media_link_creation(self):
         """Test social media link can be created"""
-        self.assertEqual(self.link.platform, "FACEBOOK")
+        self.assertEqual(self.link.platform, "facebook")
         self.assertEqual(self.link.url, "https://facebook.com/test")
 
     def test_social_media_link_str(self):
         """Test string representation"""
-        self.assertIn("Facebook", str(self.link))
+        self.assertIn("facebook", str(self.link))
 
     def test_icon_class_property(self):
         """Test icon_class property returns correct icon"""
-        self.assertEqual(self.link.icon_class, "facebook")
+        self.assertEqual(self.link.icon_class, "fab fa-facebook")
 
         # Test other platforms
-        self.link.platform = "TWITTER"
+        self.link.platform = "twitter"
         self.link.save()
-        self.assertEqual(self.link.icon_class, "twitter")
+        self.assertEqual(self.link.icon_class, "fab fa-twitter")
 
-        self.link.platform = "LINKEDIN"
+        self.link.platform = "linkedin"
         self.link.save()
-        self.assertEqual(self.link.icon_class, "linkedin")
+        self.assertEqual(self.link.icon_class, "fab fa-linkedin")
 
 
 class SequenceCounterModelTest(TestCase):
