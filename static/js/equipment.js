@@ -40,11 +40,12 @@ function bulkAction(action) {
         `This will ${action.replace('_', ' ')} ${ids.length} item(s). Continue?`,
         () => {
             showLoading();
-            fetch('{% url "equipment:equipment_bulk_action" %}', {
+            const bulkActionUrl = window.ITAM_CONFIG?.bulkActionUrl || '/inventory/equipment/bulk-action/';
+            fetch(bulkActionUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': '{{ csrf_token }}'
+                    'X-CSRFToken': window.ITAM_CONFIG?.csrfToken || ''
                 },
                 body: `action=${action}&equipment_ids=${ids.join('&equipment_ids=')}`
             })

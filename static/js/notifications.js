@@ -58,8 +58,11 @@ function applyFilters() {
 // Confirm delete - now handled by Alpine.js in template
 // These functions are defined in the template script with Alpine.js integration
 
-// Mark single notification as read
+// Mark single notification as read - updates DOM without full reload
 function markAsRead(notificationId) {
+    const el = document.querySelector(`[data-notification-id="${notificationId}"]`);
+    if (el) el.style.opacity = '0.5';
+    
     fetch(`/notifications/mark-read/${notificationId}/`, {
         method: 'POST',
         headers: getCSRFHeader()
@@ -67,8 +70,18 @@ function markAsRead(notificationId) {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            location.reload();
+            if (el) {
+                el.classList.remove('border-l-4');
+                el.style.borderLeftColor = 'transparent';
+                el.style.opacity = '1';
+            }
+            // Hide the check button
+            const btn = el?.querySelector('button[onclick*="markAsRead"]');
+            if (btn) btn.style.display = 'none';
+            // Update unread count in sidebar
+            updateUnreadCount(-1);
         } else {
+            if (el) el.style.opacity = '1';
             if (window.showToast) {
                 window.showToast('Error marking notification as read', 'error');
             }
@@ -76,13 +89,14 @@ function markAsRead(notificationId) {
     })
     .catch(error => {
         console.error('Error:', error);
+        if (el) el.style.opacity = '1';
         if (window.showToast) {
             window.showToast('An error occurred', 'error');
         }
     });
 }
 
-// Mark all notifications as read
+// Mark all notifications as read - updates DOM without full reload
 function markAllAsRead() {
     fetch(MARK_ALL_READ_URL, {
         method: 'POST',
@@ -91,7 +105,15 @@ function markAllAsRead() {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            location.reload();
+            // Update all notification cards
+            document.querySelectorAll('[data-notification-id]').forEach(el => {
+                el.classList.remove('border-l-4');
+                el.style.borderLeftColor = 'transparent';
+                const btn = el.querySelector('button[onclick*="markAsRead"]');
+                if (btn) btn.style.display = 'none';
+            });
+            // Reset unread count
+            updateUnreadCount(0);
         } else {
             if (window.showToast) {
                 window.showToast('Error marking all as read', 'error');
@@ -104,6 +126,24 @@ function markAllAsRead() {
             window.showToast('An error occurred', 'error');
         }
     });
+}
+
+// Update unread count in sidebar
+function updateUnreadCount(newCount) {
+    const badges = document.querySelectorAll('.sidebar-badge');
+    badges.forEach(badge => {
+        if (newCount <= 0) {
+            badge.style.display = 'none';
+        } else {
+            badge.textContent = newCount;
+            badge.style.display = '';
+        }
+    });
+    // Update mark all button
+    const markAllBtn = document.querySelector('button[onclick*="markAllAsRead"]');
+    if (markAllBtn && newCount <= 0) {
+        markAllBtn.closest('.flex').remove();
+    }
 }
 
 // Export functions for use in other scripts

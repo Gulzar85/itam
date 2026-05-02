@@ -7,12 +7,8 @@
     <title>{{ business_info.name|default:"IT Asset Manager" }}</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="{% static 'js/lucide.min.js' %}"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link rel="icon" type="image/png" href="{% if business_info.logo %}{{ business_info.logo.url }}{% else %}{% static 'favicon.png' %}{% endif %}">     
     
     <!-- Set CSS variables from context processor -->
@@ -25,6 +21,7 @@
             --accent-color: {{ theme_colors.accent|default:"#FFBD0A" }};
             --accent-color-alpha: {{ theme_colors.accent_alpha|default:"#FFBD0A1A" }};
         }
+        [x-cloak] { display: none !important; }
     </style>
     
     <script>
@@ -92,6 +89,13 @@
     
     <script src="{% static 'js/base.js' %}"></script>
     
+    <!-- Moved heavy scripts to bottom of body for better performance -->
+    <script src="{% static 'js/lucide.min.js' %}" defer></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts" defer></script>
     {% block extra_js %}{% endblock %}
+    
+    <!-- QR code scanner only needed if used on page -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript" defer></script>
 </body>
 </html>

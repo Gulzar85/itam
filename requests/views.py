@@ -12,7 +12,7 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView
-
+from django.db.models import Q, Count
 from services.permissions import ITAdminRequiredMixin, ManagerOrAdminRequiredMixin
 
 from accounts.models import User
@@ -25,7 +25,35 @@ from services.request_service import RequestService
 logger = logging.getLogger(__name__)
 
 
+class MyEquipmentView(LoginRequiredMixin, ListView):
+    """Shows equipment assigned to the current user, regardless of role."""
+    model = Equipment
+    template_name = 'requests/my_equipment.html'
+    context_object_name = 'equipment_list'
+    paginate_by = 12
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        return Equipment.objects.select_related(
+            'brand', 'category', 'assigned_to'
+        ).filter(assigned_to=user).order_by('-assigned_date')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        context['total_assigned'] = self.get_queryset().count()
+        context['today'] = timezone.now().date()
+        context['warranty_expiring'] = self.get_queryset().filter(
+            warranty_expiry__isnull=False,
+            warranty_expiry__lt=timezone.now().date() + timezone.timedelta(days=30)
+        ).count()
+        return context
+
+
 class RequestDashboardView(LoginRequiredMixin, ListView):
+    """
+    Central hub for tracking IT requests with role-based visibility.
+    """
     model = Request
     template_name = 'dashboard/index.html'
     context_object_name = 'requests'
@@ -33,6 +61,7 @@ class RequestDashboardView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         user = cast(User, self.request.user)
+        # Optimized with select_related to prevent N+1 query issues
         base_qs = Request.objects.select_related(
             'user', 'equipment', 'category_needed', 'user__manager'
         )
@@ -40,7 +69,8 @@ class RequestDashboardView(LoginRequiredMixin, ListView):
         if hasattr(user, 'role') and user.role == 'IT_ADMIN':
             return base_qs.all().order_by('-created_at')
 
-        if hasattr(user, 'role') and (user.role == 'IT_ADMIN' or user.can_approve):
+        # Hierarchy View: Show user's requests and those they need to approve[cite: 19]
+        if hasattr(user, 'role') and (user.role == 'IT_ADMIN' or getattr(user, 'can_approve', False)):
             return base_qs.filter(Q(user=user) | Q(user__manager=user)).distinct().order_by('-created_at')
 
         return base_qs.filter(user=user).order_by('-created_at')
@@ -48,12 +78,13 @@ class RequestDashboardView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         qs = self.get_queryset()
-        context['stats'] = {
-            'total': qs.count(),
-            'pending': qs.filter(status='PENDING').count(),
-            'in_progress': qs.filter(status='IN_PROGRESS').count(),
-            'completed': qs.filter(status='COMPLETED').count(),
-        }
+        # Single-hit aggregation for dashboard performance[cite: 18, 19]
+        context['stats'] = qs.aggregate(
+            total=Count('id'),
+            pending=Count('id', filter=Q(status='PENDING')),
+            in_progress=Count('id', filter=Q(status='IN_PROGRESS')),
+            completed=Count('id', filter=Q(status='COMPLETED')),
+        )
         return context
 
 

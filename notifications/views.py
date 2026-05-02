@@ -17,6 +17,10 @@ class NotificationListView(LoginRequiredMixin, ListView):
         queryset = Notification.objects.filter(
             recipient=self.request.user,
             is_archived=False
+        ).select_related(
+            'related_request',
+            'related_equipment',
+            'related_request__user'
         ).order_by('-created_at')
         
         # Filter by type

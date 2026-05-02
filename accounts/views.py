@@ -3,81 +3,76 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
-from .forms import UserProfileForm
+from .forms import UserProfileForm, UserCreationForm
 from django.views.generic import CreateView
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
-from django.contrib.auth.forms import UserCreationForm
 from django.urls import reverse_lazy
 from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import DetailView
+from django.contrib.auth.views import (
+    PasswordChangeView, 
+    PasswordResetView, 
+    PasswordResetConfirmView
+)
+from django.views.generic.edit import UpdateView
+from .forms import UserProfileForm, UserCreationForm
 
 User = get_user_model()
 
 
-@login_required
-def profile_view(request):
-    """
-    Display user profile information.
-    """
-    return render(request, 'accounts/profile.html', {
-        'user': request.user
-    })
+class ProfileDetailView(LoginRequiredMixin, DetailView):
+    """Optimized profile display[cite: 14]."""
+    model = User
+    template_name = 'accounts/profile.html'
+    context_object_name = 'profile_user'
+
+    def get_object(self):
+        # select_related avoids N+1 when accessing department in templates[cite: 2]
+        return User.objects.select_related('department', 'manager').get(pk=self.request.user.pk)
 
 
-@login_required
-def profile_edit_view(request):
-    """
-    Allow users to edit their profile information.
-    """
-    if request.method == 'POST':
-        form = UserProfileForm(request.POST, instance=request.user)
-        if form.is_valid():
-            form.save()
-            messages.success(
-                request, 'Your profile has been updated successfully!')
-            return redirect('accounts:profile')
-    else:
-        form = UserProfileForm(instance=request.user)
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    """Streamlined profile editing[cite: 14]."""
+    model = User
+    form_class = UserProfileForm
+    template_name = 'accounts/profile_edit.html'
+    success_url = reverse_lazy('accounts:profile')
 
-    return render(request, 'accounts/profile_edit.html', {
-        'form': form
-    })
+    def get_object(self):
+        return self.request.user
 
+    def form_valid(self, form):
+        messages.success(self.request, 'Your profile has been updated successfully![cite: 14]')
+        return super().form_valid(form)
 
-@login_required
-def change_password_view(request):
-    """
-    Allow users to change their password.
-    """
-    if request.method == 'POST':
-        form = PasswordChangeForm(request.user, request.POST)
-        if form.is_valid():
-            user = form.save()
-            update_session_auth_hash(request, user)  # Important!
-            messages.success(
-                request, 'Your password has been changed successfully!')
-            return redirect('accounts:profile')
-    else:
-        form = PasswordChangeForm(request.user)
+class CustomPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
+    """Secure password management with automated session updates[cite: 14]."""
+    template_name = 'accounts/change_password.html'
+    success_url = reverse_lazy('accounts:profile')
 
-    return render(request, 'accounts/change_password.html', {
-        'form': form
-    })
+    def form_valid(self, form):
+        messages.success(self.request, 'Your password has been changed successfully![cite: 14]')
+        return super().form_valid(form)
 
 
-class RegisterView(CreateView):
+from services.permissions import ITAdminRequiredMixin
+
+
+class RegisterView(ITAdminRequiredMixin, CreateView):
     """
     User registration view for new employees.
     """
     model = User
     form_class = UserCreationForm
     template_name = 'accounts/register.html'
-    success_url = reverse_lazy('accounts:login')
+    success_url = reverse_lazy('dashboard')
 
     def form_valid(self, form):
         response = super().form_valid(form)
         messages.success(
             self.request,
-            'Registration successful! Please log in with your credentials.'
+            f'Account created successfully for {form.cleaned_data["first_name"]} {form.cleaned_data["last_name"]}.'
         )
         return response
 

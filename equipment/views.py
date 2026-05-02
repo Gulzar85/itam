@@ -217,26 +217,22 @@ class EquipmentExportView(LoginRequiredMixin, ITAdminRequiredMixin, View):
 
 
 class EquipmentStatusUpdateView(LoginRequiredMixin, ITAdminRequiredMixin, View):
-    """AJAX endpoint to update equipment status"""
+    """AJAX endpoint to update equipment status using EquipmentService"""
 
     def post(self, request, pk):
+        from services.equipment_service import EquipmentService
         equipment = get_object_or_404(Equipment, pk=pk)
         new_status = request.POST.get('status')
+        remarks = request.POST.get('remarks', 'Status updated via AJAX')
 
         if new_status in dict(Equipment.STATUS_CHOICES):
-            old_status = equipment.status
-            equipment.status = new_status
-            equipment.save()
-
-            EquipmentLog.objects.create(
+            EquipmentService.update_equipment_status(
                 equipment=equipment,
-                action_by=request.user,
-                old_status=old_status,
                 new_status=new_status,
-                remarks=request.POST.get('remarks', 'Status updated')
+                action_by=request.user,
+                remarks=remarks
             )
-
-            return JsonResponse({'status': 'success', 'message': 'Status updated'})
+            return JsonResponse({'status': 'success', 'message': f'Status updated to {new_status}'})
 
         return JsonResponse({'status': 'error', 'message': 'Invalid status'}, status=400)
 
@@ -429,44 +425,37 @@ class DashboardReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView
         if status:
             eq_query = eq_query.filter(status=status)
 
-        total_eq = eq_query.count()
-        total_val = eq_query.aggregate(total=Sum('purchase_cost'))['total'] or 0
+        # Optimize status counts using conditional aggregation
+        status_stats = eq_query.aggregate(
+            total=Count('id'),
+            available=Count('id', filter=Q(status='AVAILABLE')),
+            assigned=Count('id', filter=Q(status='ASSIGNED')),
+            repairing=Count('id', filter=Q(status='REPAIRING')),
+            damaged=Count('id', filter=Q(status='DAMAGED')),
+            total_value=Sum('purchase_cost')
+        )
+        
+        total_eq = status_stats['total']
+        total_val = status_stats['total_value'] or 0
 
-        cat_qs = Category.objects.annotate(count=Count('equipments')).order_by('-count')[:10]
-        brand_qs = Brand.objects.annotate(count=Count('equipments')).order_by('-count')[:10]
-
-        cost_qs = eq_query.exclude(purchase_date__isnull=True).annotate(
-            month=TruncMonth('purchase_date')).values('month').annotate(total=Sum('purchase_cost')).order_by('month')
-
-        trends_qs = req_query.annotate(month=TruncMonth('created_at')).values(
-            'month').annotate(count=Count('id')).order_by('month')
-
-        prio_data = req_query.values('priority').annotate(count=Count('id'))
-
-        vendor_qs = Vendor.objects.annotate(repair_count=Count(
-            'repairing_items')).order_by('-repair_count')[:10]
-
-        maint_qs = maint_query.exclude(sent_date__isnull=True).annotate(
-            month=TruncMonth('sent_date')
-        ).values('month').annotate(
-            total_cost=Sum(Coalesce('actual_cost', 'estimated_cost'))
-        ).order_by('month')
-
-        from requests.models import Assignment
-        dept_query = Assignment.objects.filter(
-            returned_date__isnull=True
-        ).values('user__department__name').annotate(
-            count=Count('id')
-        ).order_by('-count')[:10]
-
+        # Analytics querysets
+        cat_qs = eq_query.values('category__name').annotate(count=Count('id')).order_by('-count')
+        brand_qs = eq_query.values('brand__name').annotate(count=Count('id')).order_by('-count')
+        cost_qs = eq_query.annotate(month=TruncMonth('purchase_date')).values('month').annotate(total=Sum('purchase_cost')).order_by('month')
+        trends_qs = req_query.annotate(month=TruncMonth('created_at')).values('month').annotate(count=Count('id')).order_by('month')
+        prio_data = req_query.values('priority').annotate(count=Count('id')).order_by('-count')
+        vendor_qs = MaintenanceRecord.objects.filter(equipment__in=eq_query).values('vendor__name').annotate(repair_count=Count('id')).order_by('-repair_count')
+        maint_qs = maint_query.annotate(month=TruncMonth('sent_date')).values('month').annotate(total_cost=Sum('actual_cost')).order_by('month')
+        dept_query = req_query.values('user__department__name').annotate(count=Count('id')).order_by('-count')
+        
         analytics_data = {
             'health': {
                 'labels': ['Available', 'Assigned', 'Repairing', 'Damaged'],
                 'series': [
-                    eq_query.filter(status='AVAILABLE').count(),
-                    eq_query.filter(status='ASSIGNED').count(),
-                    eq_query.filter(status='REPAIRING').count(),
-                    eq_query.filter(status='DAMAGED').count()
+                    status_stats['available'],
+                    status_stats['assigned'],
+                    status_stats['repairing'],
+                    status_stats['damaged']
                 ]
             },
             'categories': {
@@ -505,9 +494,9 @@ class DashboardReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView
 
         context.update({
             'total_equipment': total_eq,
-            'available_equipment': eq_query.filter(status='AVAILABLE').count(),
-            'assigned_equipment': eq_query.filter(status='ASSIGNED').count(),
-            'repairing_equipment': eq_query.filter(status='REPAIRING').count(),
+            'available_equipment': status_stats['available'],
+            'assigned_equipment': status_stats['assigned'],
+            'repairing_equipment': status_stats['repairing'],
             'total_value': total_val,
             'analytics_json': json.dumps(analytics_data),
             'categories': Category.objects.all(),
@@ -563,60 +552,89 @@ class ComprehensiveReportView(LoginRequiredMixin, ITAdminRequiredMixin, Template
         if status:
             eq_query = eq_query.filter(status=status)
 
+        from django.db.models.functions import ExtractDay
+        from django.db.models import F, ExpressionWrapper, DateField, IntegerField
+
+        today = utc_now().date()
+        
+        # Optimize with annotations instead of Python loop
+        equipment_list = eq_query.select_related(
+            'brand', 'category', 'original_vendor', 'current_repair_vendor', 'assigned_to', 'assigned_to__department'
+        ).annotate(
+            days_owned=ExpressionWrapper(
+                utc_now().date() - F('purchase_date'),
+                output_field=IntegerField()
+            ),
+            warranty_days_left=ExpressionWrapper(
+                F('warranty_expiry') - utc_now().date(),
+                output_field=IntegerField()
+            )
+        )
+
+        # Pre-fetch assignments to avoid N+1 and complex dictionary building
         from requests.models import Assignment
         assignments = Assignment.objects.filter(
             equipment__in=eq_query,
             returned_date__isnull=True
-        ).select_related('equipment', 'equipment__brand', 'equipment__category', 'user', 'user__department')
+        ).select_related('user', 'user__department')
+        
+        assignment_map = {a.equipment_id: a for a in assignments}
 
-        eq_with_assignment = {}
-        for a in assignments:
-            days_assigned = (utc_now().date() - a.assigned_date).days if a.assigned_date else 0
-            eq_with_assignment[str(a.equipment_id)] = {
-                'assigned_to': a.user.get_full_name() or a.user.username,
-                'department': a.user.department.name if a.user.department else '',
-                'assign_date': a.assigned_date,
-                'days_assigned': days_assigned,
-                'assign_age': f"{days_assigned} days" if days_assigned < 30 else f"{days_assigned // 30} months" if days_assigned < 365 else f"{days_assigned // 365} years",
-            }
-
-        equipment_list = eq_query.select_related('brand', 'category', 'original_vendor', 'current_repair_vendor')
-
-        today = utc_now().date()
         enriched_equipment = []
-        for eq in equipment_list[:500]:
-            assignment_info = eq_with_assignment.get(str(eq.id), {})
+        for eq in equipment_list[:1000]:
+            assign = assignment_map.get(eq.id)
             
-            days_owned = (today - eq.purchase_date).days if eq.purchase_date else 0
+            days_assigned = (today - assign.assigned_date).days if assign and assign.assigned_date else None
+            
             warranty_status = 'EXPIRED'
-            warranty_days_left = 0
             if eq.warranty_expiry:
-                warranty_days_left = (eq.warranty_expiry - today).days
-                warranty_status = 'EXPIRED' if warranty_days_left < 0 else ('EXPIRING SOON' if warranty_days_left <= 30 else 'ACTIVE')
+                w_days = (eq.warranty_expiry - today).days
+                warranty_status = 'EXPIRED' if w_days < 0 else ('EXPIRING SOON' if w_days <= 30 else 'ACTIVE')
+
+            age_years, age_months, age_days = 0, 0, 0
+            if eq.purchase_date:
+                delta_years = today.year - eq.purchase_date.year
+                delta_months = today.month - eq.purchase_date.month
+                delta_days = today.day - eq.purchase_date.day
+                if delta_days < 0:
+                    delta_months -= 1
+                    prev_month = today.replace(day=1) - timedelta(days=1)
+                    delta_days += prev_month.day
+                if delta_months < 0:
+                    delta_years -= 1
+                    delta_months += 12
+                age_years, age_months, age_days = delta_years, delta_months, delta_days
+
+            warranty_years, warranty_months, warranty_days = 0, 0, 0
+            if eq.warranty_expiry:
+                w_target = eq.warranty_expiry
+                if w_target >= today:
+                    delta_years = w_target.year - today.year
+                    delta_months = w_target.month - today.month
+                    delta_days = w_target.day - today.day
+                    if delta_days < 0:
+                        delta_months -= 1
+                        prev_month = today.replace(day=1) - timedelta(days=1)
+                        delta_days += prev_month.day
+                    if delta_months < 0:
+                        delta_years -= 1
+                        delta_months += 12
+                    warranty_years, warranty_months, warranty_days = delta_years, delta_months, delta_days
 
             enriched_equipment.append({
-                'id': str(eq.id),
-                'tracking_id': eq.tracking_id,
-                'brand': eq.brand.name if eq.brand else '',
-                'model_number': eq.model_number,
-                'serial_number': eq.serial_number,
-                'category': eq.category.name if eq.category else '',
-                'status': eq.status,
-                'status_display': eq.get_status_display(),
-                'purchase_date': eq.purchase_date.isoformat() if eq.purchase_date else None,
-                'days_owned': days_owned,
-                'age_display': f"{days_owned} days" if days_owned < 30 else f"{days_owned // 30} months" if days_owned < 365 else f"{days_owned // 365} years",
-                'purchase_cost': float(eq.purchase_cost) if eq.purchase_cost else 0,
-                'warranty_expiry': eq.warranty_expiry.isoformat() if eq.warranty_expiry else None,
+                'obj': eq,
+                'days_owned': eq.days_owned,
+                'warranty_days_left': eq.warranty_days_left,
+                'age_years': age_years,
+                'age_months': age_months,
+                'age_days': age_days,
+                'warranty_years': warranty_years,
+                'warranty_months': warranty_months,
+                'warranty_days': warranty_days,
                 'warranty_status': warranty_status,
-                'warranty_days_left': warranty_days_left,
-                'original_vendor': eq.original_vendor.name if eq.original_vendor else '',
-                'current_repair_vendor': eq.current_repair_vendor.name if eq.current_repair_vendor else '',
-                'assigned_to': assignment_info.get('assigned_to', ''),
-                'department': assignment_info.get('department', ''),
-                'assign_date': assignment_info.get('assign_date'),
-                'days_assigned': assignment_info.get('days_assigned', 0),
-                'assign_age': assignment_info.get('assign_age', ''),
+                'assigned_to': assign.user if assign else None,
+                'department': assign.user.department if assign and assign.user else None,
+                'days_assigned': days_assigned,
             })
 
         total_eq = eq_query.count()

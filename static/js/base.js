@@ -3,27 +3,34 @@
  * ITAM - IT Asset Management System
  */
 
-// Initialize Lucide icons
+// Initialize Lucide icons ONCE
 function initLucide() {
-    if (window.lucide) {
+    if (window.lucide && !window.lucideInitialized) {
         lucide.createIcons();
+        window.lucideInitialized = true;
+    }
+}
+
+// Re-init only for newly added dynamic content
+function initNewIcons(container = document) {
+    if (window.lucide) {
+        const icons = container.querySelectorAll ? container.querySelectorAll('[data-lucide]') : [container];
+        icons.forEach(el => {
+            if (!el.classList.contains('lucide')) {
+                lucide.createIcons({ nodes: [el] });
+            }
+        });
     }
 }
 
 // Setup notifications toast auto-dismiss
 function setupNotifications() {
     $(document).ready(function() {
-        initLucide();
         setTimeout(() => {
             $('.notification-toast').fadeOut('slow', function() {
                 $(this).remove();
             });
         }, 4000);
-    });
-
-    // Re-initialize with Alpine.js
-    document.addEventListener('alpine:initialized', () => {
-        initLucide();
     });
 }
 
@@ -59,9 +66,8 @@ function showToast(message, type = 'success') {
     
     toastContainer.appendChild(toast);
     
-    if (window.lucide) {
-        lucide.createIcons();
-    }
+    // Only init icons for the newly added toast
+    initNewIcons(toast);
     
     setTimeout(() => {
         if (toast && toast.parentElement) {
@@ -100,23 +106,13 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.prepend(skipLink);
     }
 
-    // Initialize Lucid icons after DOM ready
-    if (window.lucide) {
-        lucide.createIcons();
-    }
+    // Initialize Lucid icons after DOM ready (uses flag to prevent duplicates)
+    initLucide();
 });
 
-// Re-initialize icons when Alpine.js updates the DOM
+// Re-initialize icons when Alpine.js is ready
 document.addEventListener('alpine:initialized', () => {
-    if (window.lucide) {
-        lucide.createIcons();
-    }
-
-    // Watch for DOM changes (Alpine updates)
-    const observer = new MutationObserver(() => {
-        if (window.lucide) lucide.createIcons();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    initLucide();
 });
 
 // ESC key handler for modals

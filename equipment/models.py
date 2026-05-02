@@ -134,20 +134,14 @@ class Equipment(models.Model):
             models.Index(fields=['tracking_id']),
         ]
 
-    def generate_tracking_id(self):
-        """
-        Generates a custom ID like EQ-2026-0001 using atomic counter
-        """
-        year = timezone.now().year
-        prefix = 'EQ'
-        next_value = SequenceCounter.get_next_value(prefix, year)
-        return f"{prefix}-{year}-{str(next_value).zfill(4)}"
-
     def save(self, *args, **kwargs):
-        # 1. Generate Tracking ID (only on first creation) - wrapped in atomic transaction
+        from services.equipment_service import EquipmentService
+        
+        # 1. Generate Tracking ID (only on first creation)
         if not self.tracking_id:
-            self.tracking_id = self.generate_tracking_id()
+            self.tracking_id = EquipmentService.generate_tracking_id()
 
+        # 2. Sync status based on assignments (Internal Consistency)
         if self.assigned_to and self.status == 'AVAILABLE':
             self.status = 'ASSIGNED'
         elif self.status == 'ASSIGNED' and not self.assigned_to:
@@ -155,31 +149,9 @@ class Equipment(models.Model):
         elif self.status == 'REPAIRING' and not self.current_repair_vendor:
             self.status = 'ASSIGNED' if self.assigned_to else 'AVAILABLE'
 
-        # --- QR Code Logic ---
+        # 3. Generate QR Code if missing
         if not self.qr_code:
-            qr_content = f"EQ:{self.tracking_id}\nSN:{self.serial_number}\nModel:{self.model_number}"
-
-            # 1. Setup QR with better formatting
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_H,
-                box_size=10,  # Size of each individual box
-                border=4,    # Standard white border (Quiet Zone)
-            )
-
-            qr.add_data(qr_content)
-            qr.make(fit=True)
-
-            # 2. Generate the image directly from the qr object
-            # This handles the canvas and padding automatically
-            img = qr.make_image(fill_color="black", back_color="white")
-
-            # 3. Save to buffer
-            buffer = BytesIO()
-            img.save(buffer, 'PNG')
-
-            filename = f'qr-{self.tracking_id}.png'
-            self.qr_code.save(filename, File(buffer), save=False)
+            EquipmentService.generate_qr_code(self)
 
         super().save(*args, **kwargs)
 

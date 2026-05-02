@@ -126,42 +126,58 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for eq in filtered_equipment %}
+                    {% for item in filtered_equipment %}
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
-                        <td class="py-3 px-2 font-semibold text-custom-primary whitespace-nowrap">{{ eq.tracking_id }}</td>
-                        <td class="py-3 px-2 font-medium">{{ eq.brand }}</td>
-                        <td class="py-3 px-2">{{ eq.model_number }}</td>
-                        <td class="py-3 px-2">{{ eq.category }}</td>
+                        <td class="py-3 px-2 font-semibold text-custom-primary whitespace-nowrap">{{ item.obj.tracking_id }}</td>
+                        <td class="py-3 px-2 font-medium">{{ item.obj.brand.name }}</td>
+                        <td class="py-3 px-2">{{ item.obj.model_number }}</td>
+                        <td class="py-3 px-2">{{ item.obj.category.name }}</td>
                         <td class="py-3 px-2">
-                            <span class="px-2 py-1 rounded-full text-xs font-bold {% if eq.status == 'AVAILABLE' %}bg-emerald-100 text-emerald-700{% elif eq.status == 'ASSIGNED' %}bg-blue-100 text-blue-700{% elif eq.status == 'REPAIRING' %}bg-amber-100 text-amber-700{% else %}bg-red-100 text-red-700{% endif %}">
-                                {{ eq.status_display }}
+                            <span class="px-2 py-1 rounded-full text-xs font-bold {% if item.obj.status == 'AVAILABLE' %}bg-emerald-100 text-emerald-700{% elif item.obj.status == 'ASSIGNED' %}bg-blue-100 text-blue-700{% elif item.obj.status == 'REPAIRING' %}bg-amber-100 text-amber-700{% else %}bg-red-100 text-red-700{% endif %}">
+                                {{ item.obj.get_status_display }}
                             </span>
                         </td>
-                        <td class="py-3 px-2 {% if not eq.assigned_to %}text-gray-400{% endif %}">{{ eq.assigned_to|default:"-" }}</td>
-                        <td class="py-3 px-2">{{ eq.department|default:"-" }}</td>
+                        <td class="py-3 px-2 {% if not item.assigned_to %}text-gray-400{% endif %}">{% if item.assigned_to %}{{ item.assigned_to.get_full_name|default:item.assigned_to.username }}{% else %}-{% endif %}</td>
+                        <td class="py-3 px-2">{{ item.department.name|default:"-" }}</td>
                         <td class="py-3 px-2 text-center">
-                            {% if eq.assign_age %}
-                                <span class="px-2 py-1 rounded-full text-xs font-medium {% if eq.days_assigned > 365 %}bg-red-100 text-red-700{% elif eq.days_assigned > 180 %}bg-amber-100 text-amber-700{% else %}bg-blue-100 text-blue-700{% endif %}">
-                                    {{ eq.assign_age }}
+                            {% if item.days_assigned != None %}
+                                <span class="px-2 py-1 rounded-full text-xs font-medium {% if item.days_assigned > 365 %}bg-red-100 text-red-700{% elif item.days_assigned > 180 %}bg-amber-100 text-amber-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                                    {{ item.days_assigned }} days
                                 </span>
                             {% else %}
                                 <span class="text-gray-400">-</span>
                             {% endif %}
                         </td>
-                        <td class="py-3 px-2 text-center text-gray-600">{{ eq.age_display }}</td>
-                        <td class="py-3 px-2 text-center">
-                            {% if eq.warranty_expiry %}
-                                <span class="px-2 py-1 rounded-full text-xs font-bold {% if eq.warranty_status == 'EXPIRED' %}bg-red-100 text-red-700{% elif eq.warranty_status == 'EXPIRING SOON' %}bg-amber-100 text-amber-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
-                                    {{ eq.warranty_status }}
-                                </span>
-                                <div class="text-xs text-gray-500 mt-1">{{ eq.warranty_days_left }} days</div>
+                        <td class="py-3 px-2 text-center text-gray-600">
+                            {% if item.obj.purchase_date %}
+                                {% if item.age_years > 0 %}{{ item.age_years }}y {% endif %}
+                                {% if item.age_months > 0 %}{{ item.age_months }}m {% endif %}
+                                {{ item.age_days }}d
                             {% else %}
-                                <span class="text-gray-400">No Warranty</span>
+                                -
                             {% endif %}
                         </td>
-                        <td class="py-3 px-2 text-right font-medium">{{ eq.purchase_cost|floatformat:"0"|default:"0" }}</td>
-                        <td class="py-3 px-2">{{ eq.original_vendor|default:"-" }}</td>
-                        <td class="py-3 px-2 whitespace-nowrap">{{ eq.purchase_date|date:"d M Y"|default:"-" }}</td>
+                        <td class="py-3 px-2 text-center">
+                            {% if item.obj.warranty_expiry %}
+                                <span class="px-2 py-1 rounded-full text-xs font-bold {% if item.warranty_status == 'EXPIRED' %}bg-red-100 text-red-700{% elif item.warranty_status == 'EXPIRING SOON' %}bg-amber-100 text-amber-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
+                                    {{ item.warranty_status }}
+                                </span>
+                                {% if item.warranty_status != 'EXPIRED' %}
+                                <div class="text-[10px] text-gray-500 mt-1">
+                                    {% if item.warranty_years > 0 %}{{ item.warranty_years }}y {% endif %}
+                                    {% if item.warranty_months > 0 %}{{ item.warranty_months }}m {% endif %}
+                                    {{ item.warranty_days }}d left
+                                </div>
+                                {% else %}
+                                <div class="text-[10px] text-red-500 mt-1">Expired</div>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-gray-400 text-xs">No Warranty</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-2 text-right font-medium">{{ item.obj.purchase_cost|floatformat:"0"|default:"0" }}</td>
+                        <td class="py-3 px-2">{{ item.obj.original_vendor.name|default:"-" }}</td>
+                        <td class="py-3 px-2 whitespace-nowrap">{{ item.obj.purchase_date|date:"d M Y"|default:"-" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -194,6 +210,8 @@ function tableReport() {
                     pageLength: 25,
                     order: [[0, 'desc']],
                     scrollX: true,
+                    deferRender: true,
+                    orderClasses: false,
                     dom: '<"flex justify-between items-center gap-4 mb-4"<"flex gap-2"l><"flex gap-2"f>>t<"flex justify-between items-center mt-4"ip>',
                     language: {
                         search: "Search:",

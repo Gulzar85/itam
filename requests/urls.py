@@ -8,14 +8,15 @@ from .views import (
     ManagerApprovalView,
     RequestAssignmentView,
     ProcessMaintenanceView,
-    CompleteMaintenanceView  # <-- Isay lazmi import karein
+    CompleteMaintenanceView,
+    MyEquipmentView,
 )
 
 app_name = 'requests'
 
 urlpatterns = [
-    # Dashboard aur Management
     path('', RequestDashboardView.as_view(), name='dashboard'),
+    path('my-equipment/', MyEquipmentView.as_view(), name='my_equipment'),
     path('new/', RequestCreateView.as_view(), name='create'),
     path('approvals/', ManagerApprovalView.as_view(), name='manager_approvals'),
 

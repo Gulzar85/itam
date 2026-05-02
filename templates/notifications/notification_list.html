@@ -52,7 +52,7 @@
 
     <div class="space-y-4 stagger-children" id="notificationList">
         {% for notification in notifications %}
-        <div data-notification-id="{{ notification.id }}" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 {% if not notification.is_read %}border-l-4{% endif %} hover:shadow-lg transition-all duration-300 animate-fade-in-up" {% if not notification.is_read %}style="border-left-color: var(--primary-color);"{% endif %}>
+        <div data-notification-id="{{ notification.id }}" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 {% if not notification.is_read %}border-l-4{% endif %} hover:shadow-md transition-all duration-200 {% if not notification.is_read %}style="border-left-color: var(--primary-color);"{% endif %}">
             <div class="flex items-start gap-4">
                 <div class="flex-shrink-0">
                     <div class="w-12 h-12 rounded-xl flex items-center justify-center 
@@ -61,15 +61,13 @@
                         {% elif notification.priority == 'MEDIUM' %}bg-yellow-100
                         {% else %}{% endif %}"
                         {% if notification.priority != 'CRITICAL' and notification.priority != 'HIGH' and notification.priority != 'MEDIUM' %}style="background-color: color-mix(in srgb, var(--primary-color) 10%, white);"{% endif %}>                        
-                        {% with type=notification.notification_type priority=notification.priority %}
-                        <i data-lucide="{% if type == 'REQUEST_CREATED' %}plus-circle{% elif type == 'REQUEST_APPROVED' %}check-circle{% elif type == 'REQUEST_REJECTED' %}x-circle{% elif type == 'REQUEST_COMPLETED' %}check-circle-2{% elif type == 'EQUIPMENT_ASSIGNED' %}user-check{% elif type == 'MAINTENANCE_DUE' %}wrench{% elif type == 'WARRANTY_EXPIRING' %}alert-triangle{% else %}bell{% endif %}" 
+                        <i data-lucide="{% if notification.notification_type == 'REQUEST_CREATED' %}plus-circle{% elif notification.notification_type == 'REQUEST_APPROVED' %}check-circle{% elif notification.notification_type == 'REQUEST_REJECTED' %}x-circle{% elif notification.notification_type == 'REQUEST_COMPLETED' %}check-circle-2{% elif notification.notification_type == 'EQUIPMENT_ASSIGNED' %}user-check{% elif notification.notification_type == 'MAINTENANCE_DUE' %}wrench{% elif notification.notification_type == 'WARRANTY_EXPIRING' %}alert-triangle{% else %}bell{% endif %}" 
                                class="w-6 h-6 
-                            {% if priority == 'CRITICAL' %}text-red-600
-                            {% elif priority == 'HIGH' %}text-orange-600
-                            {% elif priority == 'MEDIUM' %}text-yellow-600
+                            {% if notification.priority == 'CRITICAL' %}text-red-600
+                            {% elif notification.priority == 'HIGH' %}text-orange-600
+                            {% elif notification.priority == 'MEDIUM' %}text-yellow-600
                             {% else %}text-custom-primary{% endif %}"
-                            {% if priority != 'CRITICAL' and priority != 'HIGH' and priority != 'MEDIUM' %}style="color: var(--primary-color);"{% endif %}></i>
-                        {% endwith %}
+                            {% if notification.priority != 'CRITICAL' and notification.priority != 'HIGH' and notification.priority != 'MEDIUM' %}style="color: var(--primary-color);"{% endif %}></i>
                     </div>
                 </div>
 
@@ -87,9 +85,6 @@
                                     <i data-lucide="file-text" class="w-4 h-4"></i>
                                     Request #{{ notification.related_request.request_id }}
                                 </a>
-                                {% with status=notification.related_request.status status_choices=notification.related_request.STATUS_CHOICES %}
-                                    {% include 'includes/status_badge.html' %}
-                                {% endwith %}
                                 {% endif %}
                                 
                                 {% if notification.related_equipment %}
@@ -97,9 +92,6 @@
                                     <i data-lucide="monitor" class="w-4 h-4"></i>
                                     {{ notification.related_equipment.tracking_id }}
                                 </a>
-                                {% with status=notification.related_equipment.status status_choices=notification.related_equipment.STATUS_CHOICES %}
-                                    {% include 'includes/status_badge.html' %}
-                                {% endwith %}
                                 {% endif %}
                             </div>
                         </div>
@@ -121,15 +113,13 @@
                             <i data-lucide="clock" class="w-3 h-3"></i>
                             {{ notification.created_at|date:"M d, Y H:i" }}
                         </span>
-                        {% with priority=notification.priority %}
                         <span class="px-2 py-1 rounded text-xs font-medium
-                            {% if priority == 'CRITICAL' %}bg-red-100 text-red-800
-                            {% elif priority == 'HIGH' %}bg-orange-100 text-orange-800
-                            {% elif priority == 'MEDIUM' %}bg-yellow-100 text-yellow-800
+                            {% if notification.priority == 'CRITICAL' %}bg-red-100 text-red-800
+                            {% elif notification.priority == 'HIGH' %}bg-orange-100 text-orange-800
+                            {% elif notification.priority == 'MEDIUM' %}bg-yellow-100 text-yellow-800
                             {% else %}bg-gray-100 text-gray-800{% endif %}">
                             {{ notification.get_priority_display }}
                         </span>
-                        {% endwith %}
                         <span class="px-2 py-1 rounded text-xs font-medium
                             {% if notification.is_read %}bg-green-100 text-green-800{% else %}bg-amber-100 text-amber-800{% endif %}">
                             {% if notification.is_read %}Read{% else %}Unread{% endif %}
@@ -160,6 +150,7 @@
          class="fixed inset-0 z-50"
          x-data="{ open: false }"
          x-show="open"
+         x-cloak
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
@@ -167,7 +158,7 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0">
         <!-- Full page backdrop -->
-        <div class="fixed inset-0 bg-black/50 backdrop-blur-md" onclick="closeDeleteModal()"></div>
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-md" @click="open = false"></div>
         <!-- Modal content centered on full page -->
         <div class="fixed inset-0 flex items-center justify-center p-4"
              x-show="open"
@@ -187,7 +178,7 @@
                             <h3 class="text-lg font-bold text-slate-800">Delete Notification</h3>
                             <p class="text-sm text-slate-500 mt-1">This action cannot be undone</p>
                         </div>
-                        <button onclick="closeDeleteModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <button @click="open = false" class="text-gray-400 hover:text-gray-600 transition-colors">
                             <i data-lucide="x" class="w-5 h-5"></i>
                         </button>
                     </div>
@@ -198,7 +189,7 @@
                         </p>
                     </div>
                     <div class="flex gap-3">
-                        <button id="cancelDeleteBtn" onclick="closeDeleteModal()"
+                        <button id="cancelDeleteBtn" @click="open = false"
                                 class="flex-1 py-3 rounded-xl font-semibold border-2 border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200">
                             <i data-lucide="arrow-left" class="w-4 h-4 inline mr-2"></i>
                             Cancel
@@ -225,29 +216,19 @@
         // Define URLs that need Django template rendering
         const MARK_ALL_READ_URL = '{% url "notifications:mark_all_read" %}';
 
-        // Updated delete modal functions with Alpine.js
+        // Updated delete modal functions using Alpine.js
         let notificationToDelete = null;
 
         function confirmDelete(notificationId) {
             notificationToDelete = notificationId;
             const modal = document.getElementById('confirmDeleteModal');
-            modal.classList.remove('hidden');
-            // Trigger Alpine.js show
-            const alpineData = Alpine.$data(modal);
-            if (alpineData) {
-                alpineData.open = true;
-            }
+            // Use Alpine magic to set data
+            Alpine.$data(modal).open = true;
         }
 
         function closeDeleteModal() {
             const modal = document.getElementById('confirmDeleteModal');
-            const alpineData = Alpine.$data(modal);
-            if (alpineData) {
-                alpineData.open = false;
-                setTimeout(() => modal.classList.add('hidden'), 300);
-            } else {
-                modal.classList.add('hidden');
-            }
+            Alpine.$data(modal).open = false;
             notificationToDelete = null;
         }
 

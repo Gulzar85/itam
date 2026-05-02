@@ -6,9 +6,15 @@
     <div class="mb-6 -mx-4 -mt-4 px-4 py-6 rounded-t-xl" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 80%, white) 100%);">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex items-center gap-4">
+                {% if user.role == 'IT_ADMIN' %}
                 <a href="{% url 'equipment:equipment_list' %}" class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all">
                     <i data-lucide="chevron-left" class="w-5 h-5"></i>
                 </a>
+                {% else %}
+                <a href="{% url 'requests:my_equipment' %}" class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all">
+                    <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                </a>
+                {% endif %}
                 <div>
                     <nav class="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-white/60 mb-1">
                         <span>{{ equipment.category.name }}</span>
@@ -22,6 +28,7 @@
             </div>
 
             <div class="flex items-center gap-2 ml-auto sm:ml-0">
+                {% if user.role == 'IT_ADMIN' %}
                 <a href="{% url 'equipment:equipment_update' equipment.id %}" class="bg-white px-4 py-2 rounded-lg flex items-center gap-2 text-gray-700 text-sm font-medium hover:bg-gray-100 transition-all">
                     <i data-lucide="pencil" class="w-4 h-4"></i>
                     Edit
@@ -30,6 +37,7 @@
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                     Delete
                 </button>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -154,6 +162,7 @@
                 </div>
             </div>
 
+            {% if user.role == 'IT_ADMIN' %}
             <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
                  <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest mb-6">Status Management</h3>
                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -168,6 +177,7 @@
                     </button>
                  </div>
             </div>
+            {% endif %}
 
             <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
                 <h3 class="text-base font-bold text-slate-800 mb-5 flex items-center gap-2">
@@ -264,8 +274,6 @@
                 <div class="space-y-1 py-4 border-t border-slate-200/50">
                     <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tracking Reference</p>
                     <p class="text-2xl font-black font-mono tracking-tight text-slate-800">{{ equipment.tracking_id }}</p>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -297,6 +305,7 @@
     </div>
 </div>
 
+{% if user.role == 'IT_ADMIN' %}
 <div id="deleteModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-[60] flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl p-5 max-w-sm w-full border border-slate-100 shadow-sm text-center">
         <div class="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -313,6 +322,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <style>
     .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }

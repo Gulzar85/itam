@@ -21,8 +21,8 @@ urlpatterns = [
         template_name='accounts/password_reset_complete.html'), name='password_reset_complete'),
 
     # Profile management
-    path('profile/', views.profile_view, name='profile'),
-    path('profile/edit/', views.profile_edit_view, name='profile_edit'),
+    path('profile/', views.ProfileDetailView.as_view(), name='profile'),
+    path('profile/edit/', views.ProfileUpdateView.as_view(), name='profile_edit'),
     path('profile/change-password/',
-         views.change_password_view, name='change_password'),
+         views.CustomPasswordChangeView.as_view(), name='change_password'),
 ]

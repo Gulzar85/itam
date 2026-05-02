@@ -126,12 +126,11 @@ class GlobalSearchView(LoginRequiredMixin, View):
 
         if not equipment:
             try:
-                import uuid
-                if uuid.UUID(query) or uuid.UUID(search_query):
-                    equipment = Equipment.objects.filter(
-                        models.Q(id=query) | models.Q(id=search_query)
-                    ).select_related('brand', 'category')[:5]
-            except (ValueError, TypeError):
+                # Attempt to parse query as UUID only if initial text search yields no results
+                from uuid import UUID
+                uuid_obj = UUID(query)
+                equipment = Equipment.objects.filter(id=uuid_obj).select_related('brand', 'category')[:5]
+            except ValueError:
                 pass
 
         for eq in equipment:
