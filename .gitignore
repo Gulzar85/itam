@@ -42,7 +42,6 @@ db.sqlite3-journal
 # Environment
 .env
 .env.local
-.env.example
 
 # Logs
 logs/
