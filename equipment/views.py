@@ -1,3 +1,4 @@
+from django.utils.timezone import now as utc_now
 import csv
 import json
 from datetime import datetime, timedelta
@@ -46,7 +47,7 @@ class EquipmentListView(LoginRequiredMixin, ListView):
         if search:
             # Clean QR code format (e.g., "EQ:EQ-2026-0001" or "SN:DELL-001")
             search = search.replace('EQ:', '').replace('SN:', '').strip()
-            
+
             queryset = queryset.filter(
                 Q(serial_number__icontains=search) |
                 Q(tracking_id__icontains=search) |
@@ -89,10 +90,10 @@ class EquipmentDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['today'] = now().date()
-        
+
         # Get equipment logs chronologically
         logs = list(self.object.logs.all().order_by('timestamp'))
-        
+
         # Add virtual "registered" log at the beginning if not exists
         if logs and logs[0].old_status != 'NEW':
             registered_log = type('obj', (object,), {
@@ -103,26 +104,26 @@ class EquipmentDetailView(LoginRequiredMixin, DetailView):
                 'remarks': f'Equipment registered in system'
             })()
             logs.insert(0, registered_log)
-        
+
         context['logs'] = logs
-        
+
         from requests.models import Assignment
         context['current_assignment'] = Assignment.objects.filter(
             equipment=self.object,
             returned_date__isnull=True
         ).first()
-        
+
         # Get maintenance history for this equipment
         from equipment.models import MaintenanceRecord
         context['maintenance_records'] = MaintenanceRecord.objects.filter(
             equipment=self.object
         ).select_related('vendor', 'request', 'request__user').order_by('-sent_date')
-        
+
         # Get past assignments
         context['past_assignments'] = Assignment.objects.filter(
             equipment=self.object
         ).select_related('user', 'user__department').order_by('-assigned_date')
-        
+
         return context
 
 
@@ -174,7 +175,8 @@ class EquipmentBulkActionView(LoginRequiredMixin, ITAdminRequiredMixin, View):
                 count = equipment_qs.update(status='DAMAGED')
                 return JsonResponse({'status': 'success', 'message': f'{count} items marked as damaged'})
             elif action == 'mark_available':
-                count = equipment_qs.filter(status='REPAIRING').update(status='AVAILABLE')
+                count = equipment_qs.filter(
+                    status='REPAIRING').update(status='AVAILABLE')
                 return JsonResponse({'status': 'success', 'message': f'{count} items marked as available'})
             elif action == 'delete':
                 count = equipment_qs.delete()[0]
@@ -196,9 +198,11 @@ class EquipmentExportView(LoginRequiredMixin, ITAdminRequiredMixin, View):
         response['Content-Disposition'] = 'attachment; filename="equipment_export.csv"'
 
         writer = csv.writer(response)
-        writer.writerow(['Tracking ID', 'Brand', 'Model', 'Serial Number', 'Category', 'Status', 'Assigned To', 'Purchase Date', 'Purchase Cost'])
+        writer.writerow(['Tracking ID', 'Brand', 'Model', 'Serial Number',
+                        'Category', 'Status', 'Assigned To', 'Purchase Date', 'Purchase Cost'])
 
-        equipment = Equipment.objects.select_related('brand', 'category', 'assigned_to').all()
+        equipment = Equipment.objects.select_related(
+            'brand', 'category', 'assigned_to').all()
 
         for eq in equipment:
             writer.writerow([
@@ -209,7 +213,8 @@ class EquipmentExportView(LoginRequiredMixin, ITAdminRequiredMixin, View):
                 eq.category.name if eq.category else '',
                 eq.get_status_display(),
                 eq.assigned_to.get_full_name() if eq.assigned_to else '',
-                eq.purchase_date.strftime('%Y-%m-%d') if eq.purchase_date else '',
+                eq.purchase_date.strftime(
+                    '%Y-%m-%d') if eq.purchase_date else '',
                 float(eq.purchase_cost) if eq.purchase_cost else 0,
             ])
 
@@ -381,6 +386,12 @@ class DashboardReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView
     template_name = 'dashboard/reports.html'
 
     def get_context_data(self, **kwargs):
+        from datetime import datetime
+        from django.utils.timezone import make_aware, is_naive
+        from django.db.models import Count, Sum, Q
+        from django.db.models.functions import TruncMonth
+        import json
+
         context = super().get_context_data(**kwargs)
         request = self.request
 
@@ -390,32 +401,35 @@ class DashboardReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView
         brand = request.GET.get('brand')
         status = request.GET.get('status')
 
-        from datetime import datetime
-        from django.utils.timezone import make_aware
-        from accounts.models import Department
-
+        # Base querysets
         eq_query = Equipment.objects.all()
         req_query = Request.objects.all()
         maint_query = MaintenanceRecord.objects.all()
 
-        if start_date:
+        # --- Date Filters ---
+        def parse_date(date_str, end=False):
             try:
-                start = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
-                eq_query = eq_query.filter(purchase_date__gte=start)
-                req_query = req_query.filter(created_at__gte=start)
-                maint_query = maint_query.filter(sent_date__gte=start)
-            except (ValueError, TypeError):
-                pass
+                dt = datetime.strptime(date_str, '%Y-%m-%d')
+                if end:
+                    dt = dt.replace(hour=23, minute=59, second=59)
+                return make_aware(dt) if is_naive(dt) else dt
+            except Exception:
+                return None
 
-        if end_date:
-            try:
-                end = make_aware(datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
-                eq_query = eq_query.filter(purchase_date__lte=end)
-                req_query = req_query.filter(created_at__lte=end)
-                maint_query = maint_query.filter(sent_date__lte=end)
-            except (ValueError, TypeError):
-                pass
+        start = parse_date(start_date) if start_date else None
+        end = parse_date(end_date, end=True) if end_date else None
 
+        if start:
+            eq_query = eq_query.filter(purchase_date__gte=start)
+            req_query = req_query.filter(created_at__gte=start)
+            maint_query = maint_query.filter(sent_date__gte=start)
+
+        if end:
+            eq_query = eq_query.filter(purchase_date__lte=end)
+            req_query = req_query.filter(created_at__lte=end)
+            maint_query = maint_query.filter(sent_date__lte=end)
+
+        # --- Filters ---
         if category:
             eq_query = eq_query.filter(category_id=category)
 
@@ -425,7 +439,7 @@ class DashboardReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView
         if status:
             eq_query = eq_query.filter(status=status)
 
-        # Optimize status counts using conditional aggregation
+        # --- Aggregations ---
         status_stats = eq_query.aggregate(
             total=Count('id'),
             available=Count('id', filter=Q(status='AVAILABLE')),
@@ -434,85 +448,126 @@ class DashboardReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView
             damaged=Count('id', filter=Q(status='DAMAGED')),
             total_value=Sum('purchase_cost')
         )
-        
-        total_eq = status_stats['total']
-        total_val = status_stats['total_value'] or 0
 
-        # Analytics querysets
-        cat_qs = eq_query.values('category__name').annotate(count=Count('id')).order_by('-count')
-        brand_qs = eq_query.values('brand__name').annotate(count=Count('id')).order_by('-count')
-        cost_qs = eq_query.annotate(month=TruncMonth('purchase_date')).values('month').annotate(total=Sum('purchase_cost')).order_by('month')
-        trends_qs = req_query.annotate(month=TruncMonth('created_at')).values('month').annotate(count=Count('id')).order_by('month')
-        prio_data = req_query.values('priority').annotate(count=Count('id')).order_by('-count')
-        vendor_qs = MaintenanceRecord.objects.filter(equipment__in=eq_query).values('vendor__name').annotate(repair_count=Count('id')).order_by('-repair_count')
-        maint_qs = maint_query.annotate(month=TruncMonth('sent_date')).values('month').annotate(total_cost=Sum('actual_cost')).order_by('month')
-        dept_query = req_query.values('user__department__name').annotate(count=Count('id')).order_by('-count')
-        
+        total_eq = status_stats.get('total') or 0
+        total_val = float(status_stats.get('total_value') or 0)
+
+        # --- Querysets ---
+        cat_qs = eq_query.values('category__name').annotate(
+            count=Count('id')).order_by('-count')
+        brand_qs = eq_query.values('brand__name').annotate(
+            count=Count('id')).order_by('-count')
+
+        cost_qs = eq_query.annotate(month=TruncMonth('purchase_date')) \
+                          .values('month') \
+                          .annotate(total=Sum('purchase_cost')) \
+                          .order_by('month')
+
+        trends_qs = req_query.annotate(month=TruncMonth('created_at')) \
+                             .values('month') \
+                             .annotate(count=Count('id')) \
+                             .order_by('month')
+
+        prio_data = req_query.values('priority').annotate(
+            count=Count('id')).order_by('-count')
+
+        vendor_qs = maint_query.filter(equipment__in=eq_query) \
+                               .values('vendor__name') \
+                               .annotate(repair_count=Count('id')) \
+                               .order_by('-repair_count')
+
+        maint_qs = maint_query.annotate(month=TruncMonth('sent_date')) \
+                              .values('month') \
+                              .annotate(total_cost=Sum('actual_cost')) \
+                              .order_by('month')
+
+        dept_query = req_query.values('user__department__name') \
+                              .annotate(count=Count('id')) \
+                              .order_by('-count')
+
+        # --- Safe helpers ---
+        def safe_month(dt):
+            return dt.strftime('%b %Y') if dt else ''
+
+        def safe_float(val):
+            try:
+                return float(val or 0)
+            except Exception:
+                return 0
+
+        # --- Analytics Data ---
         analytics_data = {
             'health': {
                 'labels': ['Available', 'Assigned', 'Repairing', 'Damaged'],
                 'series': [
-                    status_stats['available'],
-                    status_stats['assigned'],
-                    status_stats['repairing'],
-                    status_stats['damaged']
+                    status_stats.get('available', 0),
+                    status_stats.get('assigned', 0),
+                    status_stats.get('repairing', 0),
+                    status_stats.get('damaged', 0),
                 ]
             },
             'categories': {
-                'labels': list(cat_qs.values_list('name', flat=True)),
+                'labels': list(cat_qs.values_list('category__name', flat=True)),
                 'series': list(cat_qs.values_list('count', flat=True))
             },
+            'brands': {
+                'labels': list(brand_qs.values_list('brand__name', flat=True)),
+                'series': list(brand_qs.values_list('count', flat=True))
+            },
             'costs': {
-                'labels': [m['month'].strftime('%b %Y') for m in cost_qs if m['month']],
-                'series': [float(m['total'] or 0) for m in cost_qs]
+                'labels': [safe_month(m['month']) for m in cost_qs],
+                'series': [safe_float(m['total']) for m in cost_qs]
             },
             'trends': {
-                'labels': [m['month'].strftime('%b %Y') for m in trends_qs if m['month']],
+                'labels': [safe_month(m['month']) for m in trends_qs],
                 'series': [m['count'] for m in trends_qs]
-            },
-            'brands': {
-                'labels': list(brand_qs.values_list('name', flat=True)),
-                'series': list(brand_qs.values_list('count', flat=True))
             },
             'priority': {
                 'labels': [p['priority'] for p in prio_data],
                 'series': [p['count'] for p in prio_data]
             },
             'vendors': {
-                'labels': list(vendor_qs.values_list('name', flat=True)),
+                'labels': list(vendor_qs.values_list('vendor__name', flat=True)),
                 'series': list(vendor_qs.values_list('repair_count', flat=True))
             },
             'maintenance': {
-                'labels': [m['month'].strftime('%b %Y') for m in maint_qs if m['month']],
-                'series': [float(m['total_cost'] or 0) for m in maint_qs]
+                'labels': [safe_month(m['month']) for m in maint_qs],
+                'series': [safe_float(m['total_cost']) for m in maint_qs]
             },
             'departments': {
-                'labels': [d['user__department__name'] for d in dept_query if d['user__department__name']],
-                'series': [d['count'] for d in dept_query if d['user__department__name']]
+                'labels': [
+                    d['user__department__name']
+                    for d in dept_query if d['user__department__name']
+                ],
+                'series': [
+                    d['count']
+                    for d in dept_query if d['user__department__name']
+                ]
             }
         }
 
+        # --- Context ---
         context.update({
             'total_equipment': total_eq,
-            'available_equipment': status_stats['available'],
-            'assigned_equipment': status_stats['assigned'],
-            'repairing_equipment': status_stats['repairing'],
+            'available_equipment': status_stats.get('available', 0),
+            'assigned_equipment': status_stats.get('assigned', 0),
+            'repairing_equipment': status_stats.get('repairing', 0),
             'total_value': total_val,
             'analytics_json': json.dumps(analytics_data),
+
             'categories': Category.objects.all(),
             'brands': Brand.objects.all(),
             'status_choices': Equipment.STATUS_CHOICES,
+
             'filter_start_date': start_date or '',
             'filter_end_date': end_date or '',
             'filter_category': category or '',
             'filter_brand': brand or '',
             'filter_status': status or '',
-            'departments': Department.objects.all(),
         })
+
         return context
 
-
-from django.utils.timezone import now as utc_now
 
 class ComprehensiveReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView):
     template_name = 'reports/comprehensive.html'
@@ -538,7 +593,8 @@ class ComprehensiveReportView(LoginRequiredMixin, ITAdminRequiredMixin, Template
 
         if end_date:
             try:
-                end = make_aware(datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+                end = make_aware(datetime.strptime(
+                    end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
                 eq_query = eq_query.filter(purchase_date__lte=end)
             except (ValueError, TypeError):
                 pass
@@ -556,7 +612,7 @@ class ComprehensiveReportView(LoginRequiredMixin, ITAdminRequiredMixin, Template
         from django.db.models import F, ExpressionWrapper, DateField, IntegerField
 
         today = utc_now().date()
-        
+
         # Optimize with annotations instead of Python loop
         equipment_list = eq_query.select_related(
             'brand', 'category', 'original_vendor', 'current_repair_vendor', 'assigned_to', 'assigned_to__department'
@@ -577,19 +633,21 @@ class ComprehensiveReportView(LoginRequiredMixin, ITAdminRequiredMixin, Template
             equipment__in=eq_query,
             returned_date__isnull=True
         ).select_related('user', 'user__department')
-        
+
         assignment_map = {a.equipment_id: a for a in assignments}
 
         enriched_equipment = []
         for eq in equipment_list[:1000]:
             assign = assignment_map.get(eq.id)
-            
-            days_assigned = (today - assign.assigned_date).days if assign and assign.assigned_date else None
-            
+
+            days_assigned = (
+                today - assign.assigned_date).days if assign and assign.assigned_date else None
+
             warranty_status = 'EXPIRED'
             if eq.warranty_expiry:
                 w_days = (eq.warranty_expiry - today).days
-                warranty_status = 'EXPIRED' if w_days < 0 else ('EXPIRING SOON' if w_days <= 30 else 'ACTIVE')
+                warranty_status = 'EXPIRED' if w_days < 0 else (
+                    'EXPIRING SOON' if w_days <= 30 else 'ACTIVE')
 
             age_years, age_months, age_days = 0, 0, 0
             if eq.purchase_date:
@@ -638,7 +696,8 @@ class ComprehensiveReportView(LoginRequiredMixin, ITAdminRequiredMixin, Template
             })
 
         total_eq = eq_query.count()
-        total_val = eq_query.aggregate(total=Sum('purchase_cost'))['total'] or 0
+        total_val = eq_query.aggregate(
+            total=Sum('purchase_cost'))['total'] or 0
         avg_cost = total_val / total_eq if total_eq > 0 else 0
 
         context.update({
@@ -690,7 +749,8 @@ class MaintenanceHistoryReportView(LoginRequiredMixin, ITAdminRequiredMixin, Tem
 
         if end_date:
             try:
-                end = make_aware(datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+                end = make_aware(datetime.strptime(
+                    end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
                 maint_query = maint_query.filter(sent_date__lte=end)
             except (ValueError, TypeError):
                 pass
@@ -709,7 +769,8 @@ class MaintenanceHistoryReportView(LoginRequiredMixin, ITAdminRequiredMixin, Tem
             elif m.sent_date and m.expected_return_date:
                 repair_duration = (m.expected_return_date - m.sent_date).days
 
-            cost_diff = float(m.actual_cost or 0) - float(m.estimated_cost or 0) if m.actual_cost else None
+            cost_diff = float(m.actual_cost or 0) - \
+                float(m.estimated_cost or 0) if m.actual_cost else None
 
             records.append({
                 'equipment': f"{m.equipment.brand.name} {m.equipment.model_number}",
@@ -729,12 +790,14 @@ class MaintenanceHistoryReportView(LoginRequiredMixin, ITAdminRequiredMixin, Tem
             })
 
         total_estimated = sum(r['estimated_cost'] for r in records)
-        total_actual = sum(r['actual_cost'] for r in records if r['actual_cost'])
+        total_actual = sum(r['actual_cost']
+                           for r in records if r['actual_cost'])
         total_records = maint_query.count()
         completed_records = maint_query.filter(status='COMPLETED').count()
-        
+
         duration_items = [r for r in records if r['repair_duration']]
-        avg_duration = sum(r['repair_duration'] for r in duration_items) / len(duration_items) if duration_items else 0
+        avg_duration = sum(r['repair_duration'] for r in duration_items) / \
+            len(duration_items) if duration_items else 0
 
         context.update({
             'records': records,
@@ -766,7 +829,8 @@ class RequestSummaryReportView(LoginRequiredMixin, ITAdminRequiredMixin, Templat
 
         from requests.models import Request
 
-        req_query = Request.objects.select_related('user', 'user__department').prefetch_related('logs')
+        req_query = Request.objects.select_related(
+            'user', 'user__department').prefetch_related('logs')
 
         if start_date:
             try:
@@ -777,7 +841,8 @@ class RequestSummaryReportView(LoginRequiredMixin, ITAdminRequiredMixin, Templat
 
         if end_date:
             try:
-                end = make_aware(datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+                end = make_aware(datetime.strptime(
+                    end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
                 req_query = req_query.filter(created_at__lte=end)
             except (ValueError, TypeError):
                 pass
@@ -793,10 +858,12 @@ class RequestSummaryReportView(LoginRequiredMixin, ITAdminRequiredMixin, Templat
 
         requests_data = []
         for r in req_query[:200]:
-            days_open = (today - r.created_at.date()).days if r.created_at else 0
+            days_open = (today - r.created_at.date()
+                         ).days if r.created_at else 0
 
             logs = r.logs.all().order_by('timestamp') if hasattr(r, 'logs') else []
-            timeline = [{'action': 'Created', 'timestamp': r.created_at, 'by': r.user.get_full_name() or r.user.username}]
+            timeline = [{'action': 'Created', 'timestamp': r.created_at,
+                         'by': r.user.get_full_name() or r.user.username}]
             for log in logs[:10]:
                 timeline.append({
                     'action': f"{log.old_status} -> {log.new_status}",
@@ -849,7 +916,8 @@ class VendorPerformanceReportView(LoginRequiredMixin, ITAdminRequiredMixin, Temp
 
         from equipment.models import MaintenanceRecord
 
-        maint_query = MaintenanceRecord.objects.filter(vendor__isnull=False).select_related('vendor', 'equipment')
+        maint_query = MaintenanceRecord.objects.filter(
+            vendor__isnull=False).select_related('vendor', 'equipment')
 
         if start_date:
             try:
@@ -860,7 +928,8 @@ class VendorPerformanceReportView(LoginRequiredMixin, ITAdminRequiredMixin, Temp
 
         if end_date:
             try:
-                end = make_aware(datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+                end = make_aware(datetime.strptime(
+                    end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
                 maint_query = maint_query.filter(sent_date__lte=end)
             except (ValueError, TypeError):
                 pass
@@ -876,9 +945,11 @@ class VendorPerformanceReportView(LoginRequiredMixin, ITAdminRequiredMixin, Temp
             in_progress = v_records.filter(status='IN_PROGRESS').count()
 
             estimated = sum(float(r.estimated_cost or 0) for r in v_records)
-            actual = sum(float(r.actual_cost or 0) for r in v_records if r.actual_cost)
+            actual = sum(float(r.actual_cost or 0)
+                         for r in v_records if r.actual_cost)
 
-            avg_cost_diff = ((actual - estimated) / estimated * 100) if estimated > 0 else 0
+            avg_cost_diff = ((actual - estimated) /
+                             estimated * 100) if estimated > 0 else 0
 
             durations = []
             for r in v_records.filter(status='COMPLETED', actual_return_date__isnull=False, sent_date__isnull=False):
@@ -887,7 +958,8 @@ class VendorPerformanceReportView(LoginRequiredMixin, ITAdminRequiredMixin, Temp
                     durations.append(dur)
 
             avg_duration = sum(durations) / len(durations) if durations else 0
-            on_time = sum(1 for r in v_records.filter(status='COMPLETED') if r.actual_return_date and r.expected_return_date and r.actual_return_date <= r.expected_return_date)
+            on_time = sum(1 for r in v_records.filter(status='COMPLETED')
+                          if r.actual_return_date and r.expected_return_date and r.actual_return_date <= r.expected_return_date)
             on_time_rate = (on_time / completed * 100) if completed > 0 else 0
 
             vendor_stats.append({
@@ -958,9 +1030,11 @@ class DepartmentDistributionReportView(LoginRequiredMixin, ITAdminRequiredMixin,
 
         dept_labels = [d['department'].name for d in dept_data]
         dept_values = [d['assigned_count'] for d in dept_data]
-        
-        dept_labels_json = json.dumps(dept_labels) if dept_labels else json.dumps([])
-        dept_values_json = json.dumps(dept_values) if dept_values else json.dumps([])
+
+        dept_labels_json = json.dumps(
+            dept_labels) if dept_labels else json.dumps([])
+        dept_values_json = json.dumps(
+            dept_values) if dept_values else json.dumps([])
 
         context.update({
             'departments': dept_data,
@@ -999,7 +1073,8 @@ class RequestTurnaroundReportView(LoginRequiredMixin, ITAdminRequiredMixin, Temp
 
         if end_date:
             try:
-                end = make_aware(datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+                end = make_aware(datetime.strptime(
+                    end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
                 req_query = req_query.filter(created_at__lte=end)
             except (ValueError, TypeError):
                 pass
@@ -1012,9 +1087,11 @@ class RequestTurnaroundReportView(LoginRequiredMixin, ITAdminRequiredMixin, Temp
 
         turnaround_data = []
         for r in req_query[:300]:
-            completed_log = r.logs.filter(new_status='COMPLETED').order_by('timestamp').first()
+            completed_log = r.logs.filter(
+                new_status='COMPLETED').order_by('timestamp').first()
             if completed_log:
-                total_hours = (completed_log.timestamp - r.created_at).total_seconds() / 3600
+                total_hours = (completed_log.timestamp -
+                               r.created_at).total_seconds() / 3600
                 total_days = round(total_hours / 24, 1)
             else:
                 total_hours = (today - r.created_at).total_seconds() / 3600
@@ -1029,13 +1106,15 @@ class RequestTurnaroundReportView(LoginRequiredMixin, ITAdminRequiredMixin, Temp
                 prev_log = None
                 for log in logs:
                     if prev_log:
-                        hours = (log.timestamp - prev_log.timestamp).total_seconds() / 3600
+                        hours = (log.timestamp -
+                                 prev_log.timestamp).total_seconds() / 3600
                         if 'MANAGER_APPROVED' in log.new_status and 'MANAGER' not in str(prev_log.new_status):
                             manager_approval_time = round(hours, 1)
                         elif 'IT_RECEIVED' in log.new_status or 'COMPLETED' in log.new_status:
                             if 'MANAGER' in str(prev_log.new_status):
                                 it_approval_time = round(hours, 1)
-                                delivery_time = round((log.timestamp - prev_log.timestamp).total_seconds() / 3600, 1)
+                                delivery_time = round(
+                                    (log.timestamp - prev_log.timestamp).total_seconds() / 3600, 1)
                     prev_log = log
 
             turnaround_data.append({
@@ -1060,10 +1139,13 @@ class RequestTurnaroundReportView(LoginRequiredMixin, ITAdminRequiredMixin, Temp
         if turnaround_data:
             manager_items = [r for r in turnaround_data if r['manager_time']]
             it_items = [r for r in turnaround_data if r['it_time']]
-            
-            avg_turnaround = sum(r['total_days'] for r in turnaround_data) / len(turnaround_data)
-            avg_manager_time = sum(r['manager_time'] for r in manager_items) / len(manager_items) if manager_items else 0
-            avg_it_time = sum(r['it_time'] for r in it_items) / len(it_items) if it_items else 0
+
+            avg_turnaround = sum(r['total_days']
+                                 for r in turnaround_data) / len(turnaround_data)
+            avg_manager_time = sum(
+                r['manager_time'] for r in manager_items) / len(manager_items) if manager_items else 0
+            avg_it_time = sum(r['it_time'] for r in it_items) / \
+                len(it_items) if it_items else 0
         else:
             avg_turnaround = avg_manager_time = avg_it_time = 0
 
