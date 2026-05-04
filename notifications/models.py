@@ -91,6 +91,16 @@ class Notification(models.Model):
             return (timezone.now() - self.created_at).total_seconds() > 86400  # 24 hours
         return False
 
+    @property
+    def approving_manager(self):
+        """Get the manager who approved the request (if applicable)"""
+        if not self.related_request:
+            return None
+        log = self.related_request.logs.filter(
+            new_status='MANAGER_APPROVED'
+        ).select_related('action_by').first()
+        return log.action_by if log else None
+
 
 class NotificationTemplate(models.Model):
     """Templates for different types of notifications"""
