@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'crispy_tailwind',
+    'django_ratelimit',
     'accounts.apps.AccountsConfig',
     'core.apps.CoreConfig',
     'equipment.apps.EquipmentConfig',
@@ -39,10 +40,12 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django_ratelimit.middleware.RatelimitMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.security.SecurityMiddleware',  # Duplicate to ensure it's loaded
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -111,3 +114,51 @@ LOGGING = {
         'django': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
     },
 }
+
+# Rate limiting configuration
+RATELIMIT_ENABLE = True
+RATELIMIT_STORAGE_URL = 'locmem://ratelimit-cache'
+RATELIMIT_GLOBAL = '100/h'
+RATELIMIT_PER_VIEW = {
+    'accounts:login': '5/m',
+    'accounts:password_reset': '3/h',
+    'requests:create': '10/h',
+}
+
+# Silence django-ratelimit system checks during testing
+SILENCED_SYSTEM_CHECKS = [
+    'django_ratelimit.E003',
+    'django_ratelimit.W001',
+]
+
+# File upload settings
+MAX_UPLOAD_SIZE = 2 * 1024 * 1024  # 2MB
+VALID_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+VALID_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp']
+
+# Cache configuration (use Redis in production)
+# For rate limiting, we need a shared cache backend
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        },
+    },
+}
+
+# Session settings
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_HTTPONLY = True
+
+# Cookie security - set via environment variables for flexibility
+# In production (config/settings/production.py), these are forced to True
+SESSION_COOKIE_SECURE = env.bool('SESSION_COOKIE_SECURE', default=False)
+CSRF_COOKIE_SECURE = env.bool('CSRF_COOKIE_SECURE', default=False)
+
+# Security headers
+X_FRAME_OPTIONS = 'DENY'
+X_CONTENT_TYPE_OPTIONS = 'nosniff'
+X_XSS_PROTECTION = '1; mode=block'

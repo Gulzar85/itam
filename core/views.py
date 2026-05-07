@@ -12,7 +12,7 @@ from accounts.models import User
 from equipment.models import Equipment, Vendor, Brand, Category
 from requests.models import Request
 from .models import BusinessInfo, SocialMediaLink
-from .forms import BusinessInfoForm, SocialMediaLinkForm
+from .forms.forms_backup import BusinessInfoForm, SocialMediaLinkForm
 
 
 class BusinessInfoDetailView(LoginRequiredMixin, DetailView):
@@ -255,7 +255,7 @@ class GlobalSearchView(LoginRequiredMixin, View):
                     'type': 'User' if u.role != User.IS_IT_ADMIN else 'Staff',
                     'title': f"{u.get_full_name() or u.username}",
                     'subtitle': f"{u.email} ({u.get_role_display()})",
-                    'url': f"/accounts/users/{u.id}/",
+                    'url': "/accounts/profile/",
                     'icon': 'users' if u.role != User.IS_IT_ADMIN else 'shield',
                     'icon_color': 'text-cyan-600',
                     'icon_bg': 'bg-cyan-100',

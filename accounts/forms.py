@@ -2,6 +2,9 @@ from django import forms
 from crispy_forms.helper import FormHelper
 from django.contrib.auth.forms import UserChangeForm
 from accounts.models import User
+from core.forms.base import (
+    get_text_input, get_email_input, get_select, TAILWIND_TEXTAREA
+)
 
 
 class UserProfileForm(forms.ModelForm):
@@ -11,28 +14,12 @@ class UserProfileForm(forms.ModelForm):
         model = User
         fields = ['first_name', 'last_name', 'email', 'phone_number', 'department', 'manager']
         widgets = {
-            'first_name': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
-                'placeholder': 'Your first name'
-            }),
-            'last_name': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
-                'placeholder': 'Your last name'
-            }),
-            'email': forms.EmailInput(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
-                'placeholder': 'your.email@company.com'
-            }),
-            'phone_number': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
-                'placeholder': '+1234567890'
-            }),
-            'department': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
-            }),
-            'manager': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
-            }),
+            'first_name': get_text_input('Your first name'),
+            'last_name': get_text_input('Your last name'),
+            'email': get_email_input('your.email@company.com'),
+            'phone_number': get_text_input('+1234567890'),
+            'department': get_select(),
+            'manager': get_select(),
         }
         labels = {
             'first_name': 'First Name',
@@ -61,57 +48,32 @@ class UserProfileForm(forms.ModelForm):
         self.fields['phone_number'].required = False
 
 
+from core.forms.base import get_password_input
+
 class UserCreationForm(forms.ModelForm):
     """Form for creating new users (admin only)"""
 
     password1 = forms.CharField(
         label='Password',
-        widget=forms.PasswordInput(attrs={
-            'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
-            'placeholder': 'Enter password'
-        })
+        widget=get_password_input('Enter password')
     )
     password2 = forms.CharField(
         label='Confirm Password',
-        widget=forms.PasswordInput(attrs={
-            'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
-            'placeholder': 'Confirm password'
-        })
+        widget=get_password_input('Confirm password')
     )
 
     class Meta:
         model = User
         fields = ['username', 'email', 'first_name', 'last_name', 'role', 'department', 'manager', 'phone_number']
         widgets = {
-            'username': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
-                'placeholder': 'Username'
-            }),
-            'email': forms.EmailInput(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
-                'placeholder': 'email@company.com'
-            }),
-            'first_name': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
-                'placeholder': 'First name'
-            }),
-            'last_name': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
-                'placeholder': 'Last name'
-            }),
-            'role': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
-            }),
-            'department': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
-            }),
-            'manager': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
-            }),
-            'phone_number': forms.TextInput(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
-                'placeholder': '+1234567890'
-            }),
+            'username': get_text_input('Username'),
+            'email': get_email_input('email@company.com'),
+            'first_name': get_text_input('First name'),
+            'last_name': get_text_input('Last name'),
+            'role': get_select(),
+            'department': get_select(),
+            'manager': get_select(),
+            'phone_number': get_text_input('+1234567890'),
         }
         labels = {
             'username': 'Username',

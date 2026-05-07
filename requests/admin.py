@@ -78,7 +78,7 @@ class RequestLogAdmin(admin.ModelAdmin):
 
 @admin.register(Assignment)
 class AssignmentAdmin(admin.ModelAdmin):
-    list_display = ('equipment', 'user', 'assigned_date', 'assigned_by', 'returned_date')
-    list_filter = ('assigned_date', 'returned_date')
+    list_display = ('equipment', 'user', 'assigned_date', 'assigned_by')
+    list_filter = ('assigned_date',)
     search_fields = ('equipment__tracking_id', 'user__username')
     date_hierarchy = 'assigned_date'

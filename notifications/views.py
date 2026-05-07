@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404
-from django.views.generic import ListView, DetailView, View
+from django.views import View
+from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.utils import timezone

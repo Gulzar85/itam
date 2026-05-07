@@ -19,6 +19,7 @@ def sync_maintenance_status(sender, instance, **kwargs):
         return
     
     if old_request.status != instance.status:
+        instance._previous_status = old_request.status
         from equipment.models import MaintenanceRecord
         
         if instance.status == 'COMPLETED':
@@ -36,25 +37,25 @@ def sync_maintenance_status(sender, instance, **kwargs):
                 m_record.save()
 
 
-@receiver(post_save, sender=Request)
-def create_maintenance_log(sender, instance, created, **kwargs):
-    """Create request log when status changes"""
-    if created:
-        return
-    
-    try:
-        old_request = Request.objects.get(pk=instance.pk)
-    except Request.DoesNotExist:
-        return
-    
-    if old_request.status != instance.status:
-        RequestLog.objects.create(
-            request=instance,
-            action_by=None,
-            old_status=old_request.status,
-            new_status=instance.status,
-            remarks=f"Status changed to {instance.status}"
-        )
+# DISABLED: This signal creates duplicate logs
+# The RequestService.update_request_status() already creates RequestLog entries
+# Keep this commented to prevent duplicate logging
+
+# @receiver(post_save, sender=Request)
+# def create_maintenance_log(sender, instance, created, **kwargs):
+#     """Create request log when status changes"""
+#     if created:
+#         return
+#     
+#     old_status = getattr(instance, '_previous_status', None)
+#     if old_status and old_status != instance.status:
+#         RequestLog.objects.create(
+#             request=instance,
+#             action_by=None,
+#             old_status=old_status,
+#             new_status=instance.status,
+#             remarks=f"Status changed to {instance.status}"
+#         )
 
 
 @receiver(post_save, sender=Assignment)

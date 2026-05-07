@@ -78,8 +78,10 @@ class Request(models.Model):
     def generate_request_id(self):
         year = timezone.now().year
         prefix = 'REQ'
-        next_value = SequenceCounter.get_next_value(prefix, year)
-        return f"{prefix}-{year}-{str(next_value).zfill(4)}"
+        # Get next sequence number
+        seq = SequenceCounter.get_next_value(f"{prefix}-{year}", f"{year}")
+        request_id = f"{prefix}-{year}-{seq:04d}"
+        return request_id
 
     def save(self, *args, **kwargs):
         if not self.request_id:
@@ -88,41 +90,46 @@ class Request(models.Model):
 
 
 class RequestLog(models.Model):
-    request = models.ForeignKey(
-        Request, on_delete=models.CASCADE, related_name='logs')
-    action_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    """Log for all request status changes"""
+    request = models.ForeignKey(Request, on_delete=models.CASCADE, related_name='logs')
     old_status = models.CharField(max_length=20)
     new_status = models.CharField(max_length=20)
+    action_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     remarks = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['-timestamp']
+
     def __str__(self):
-        return f"Log for REQ#{self.request.id} by {self.action_by}"
+        return f"{self.request.request_id}: {self.old_status} -> {self.new_status}"
 
 
 class Assignment(models.Model):
-    equipment = models.ForeignKey(
-        Equipment, on_delete=models.CASCADE, related_name='assignments')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE)
-    assigned_date = models.DateField(auto_now_add=True)
+    """Track equipment assignments to users"""
+    equipment = models.ForeignKey(Equipment, on_delete=models.CASCADE, related_name='assignments')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='equipment_assignments')
     assigned_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='processed_assignments'
-    )
-    returned_date = models.DateField(null=True, blank=True)
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='assigned_equipment')
+    assigned_date = models.DateField(auto_now_add=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        indexes = [
-            models.Index(fields=['user', 'returned_date']),
-        ]
+        ordering = ['-assigned_date']
 
     def __str__(self):
         return f"{self.equipment} -> {self.user}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Update equipment status
+        equipment = self.equipment
+        equipment.status = 'ASSIGNED'
+        equipment.assigned_to = self.user
+        equipment.save(update_fields=['status', 'assigned_to'])

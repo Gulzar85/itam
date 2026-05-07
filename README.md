@@ -88,12 +88,11 @@ A comprehensive Django-based IT Asset Management system for tracking, managing, 
 
 After running `populate_data`:
 
-| Role | Username | Password |
-|------|----------|----------|
-| IT Admin | admin | admin123 |
-| Manager | manager_hr | manager123 |
-| Manager | manager_finance | manager123 |
-| Employee | alice | employee123 |
+- The seeder prints generated passwords to the console by default.
+- To use fixed credentials in local/dev only, set:
+  - `ITAM_SEED_ADMIN_PASSWORD`
+  - `ITAM_SEED_MANAGER_PASSWORD`
+  - `ITAM_SEED_EMPLOYEE_PASSWORD`
 
 ## Project Structure
 

@@ -73,25 +73,40 @@ class BusinessInfo(models.Model):
 # models.py
 class SocialMediaLink(models.Model):
     PLATFORM_CHOICES = [
-        ('facebook', 'Facebook', 'fab fa-facebook'),
-        ('instagram', 'Instagram', 'fab fa-instagram'),
-        ('twitter', 'Twitter', 'fab fa-twitter'),
-        ('linkedin', 'LinkedIn', 'fab fa-linkedin'),
-        ('youtube', 'YouTube', 'fab fa-youtube'),
-        ('whatsapp', 'WhatsApp', 'fab fa-whatsapp'),
-        ('tiktok', 'TikTok', 'fab fa-tiktok'),
-        ('github', 'GitHub', 'fab fa-github'),
-        ('pinterest', 'Pinterest', 'fab fa-pinterest'),
-        ('snapchat', 'Snapchat', 'fab fa-snapchat'),
-        ('telegram', 'Telegram', 'fab fa-telegram'),
-        ('discord', 'Discord', 'fab fa-discord'),
-        ('reddit', 'Reddit', 'fab fa-reddit'),
-        ('medium', 'Medium', 'fab fa-medium'),
-        ('twitch', 'Twitch', 'fab fa-twitch'),
+        ('facebook', 'Facebook'),
+        ('instagram', 'Instagram'),
+        ('twitter', 'Twitter'),
+        ('linkedin', 'LinkedIn'),
+        ('youtube', 'YouTube'),
+        ('whatsapp', 'WhatsApp'),
+        ('tiktok', 'TikTok'),
+        ('github', 'GitHub'),
+        ('pinterest', 'Pinterest'),
+        ('snapchat', 'Snapchat'),
+        ('telegram', 'Telegram'),
+        ('discord', 'Discord'),
+        ('reddit', 'Reddit'),
+        ('medium', 'Medium'),
+        ('twitch', 'Twitch'),
     ]
 
-    _PLATFORM_DISPLAY = [(p[0], p[1]) for p in PLATFORM_CHOICES]
-    _ICON_MAP = {p[0]: p[2] for p in PLATFORM_CHOICES}
+    ICON_MAP = {
+        'facebook': 'fab fa-facebook',
+        'instagram': 'fab fa-instagram',
+        'twitter': 'fab fa-twitter',
+        'linkedin': 'fab fa-linkedin',
+        'youtube': 'fab fa-youtube',
+        'whatsapp': 'fab fa-whatsapp',
+        'tiktok': 'fab fa-tiktok',
+        'github': 'fab fa-github',
+        'pinterest': 'fab fa-pinterest',
+        'snapchat': 'fab fa-snapchat',
+        'telegram': 'fab fa-telegram',
+        'discord': 'fab fa-discord',
+        'reddit': 'fab fa-reddit',
+        'medium': 'fab fa-medium',
+        'twitch': 'fab fa-twitch',
+    }
 
     business = models.ForeignKey(
         BusinessInfo,
@@ -100,13 +115,13 @@ class SocialMediaLink(models.Model):
     )
     platform = models.CharField(
         max_length=50,
-        choices=_PLATFORM_DISPLAY
+        choices=PLATFORM_CHOICES
     )
     url = models.URLField()
 
     @property
     def icon_class(self):
-        return self._ICON_MAP.get(self.platform, 'fas fa-link')
+        return self.ICON_MAP.get(self.platform, 'fas fa-link')
 
     def __str__(self):
         return f"{self.platform} - {self.business.name}"

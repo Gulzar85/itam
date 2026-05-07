@@ -28,8 +28,11 @@ class ProfileDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'profile_user'
 
     def get_object(self):
-        # select_related avoids N+1 when accessing department in templates[cite: 2]
-        return User.objects.select_related('department', 'manager').get(pk=self.request.user.pk)
+        # Ensure users can only view their own profile (prevent IDOR)
+        # Force to current user regardless of URL parameter
+        return User.objects.select_related('department', 'manager').get(
+            pk=self.request.user.pk
+        )
 
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):

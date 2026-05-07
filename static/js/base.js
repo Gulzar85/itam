@@ -49,20 +49,36 @@ function showToast(message, type = 'success') {
     const iconColor = type === 'success' ? 'text-green-500' : 'text-red-500';
     const title = type === 'success' ? 'Success' : 'Error';
     
-    toast.innerHTML = `
-        <div class="${iconColor}">
-            <i data-lucide="${icon}" class="w-6 h-6"></i>
-        </div>
-        <div class="flex flex-col">
-            <span class="text-xs font-black uppercase tracking-wider" style="color: var(--primary-color)">
-                ${title}
-            </span>
-            <span class="font-medium text-gray-800">${message}</span>
-        </div>
-        <button onclick="this.parentElement.remove()" class="ml-auto text-gray-400 hover:text-gray-600">
-            <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-    `;
+    const iconWrapper = document.createElement('div');
+    iconWrapper.className = iconColor;
+    const iconElement = document.createElement('i');
+    iconElement.setAttribute('data-lucide', icon);
+    iconElement.className = 'w-6 h-6';
+    iconWrapper.appendChild(iconElement);
+
+    const contentWrapper = document.createElement('div');
+    contentWrapper.className = 'flex flex-col';
+    const titleElement = document.createElement('span');
+    titleElement.className = 'text-xs font-black uppercase tracking-wider';
+    titleElement.style.color = 'var(--primary-color)';
+    titleElement.textContent = title;
+    const messageElement = document.createElement('span');
+    messageElement.className = 'font-medium text-gray-800';
+    messageElement.textContent = String(message);
+    contentWrapper.appendChild(titleElement);
+    contentWrapper.appendChild(messageElement);
+
+    const closeButton = document.createElement('button');
+    closeButton.className = 'ml-auto text-gray-400 hover:text-gray-600';
+    closeButton.addEventListener('click', () => toast.remove());
+    const closeIcon = document.createElement('i');
+    closeIcon.setAttribute('data-lucide', 'x');
+    closeIcon.className = 'w-4 h-4';
+    closeButton.appendChild(closeIcon);
+
+    toast.appendChild(iconWrapper);
+    toast.appendChild(contentWrapper);
+    toast.appendChild(closeButton);
     
     toastContainer.appendChild(toast);
     

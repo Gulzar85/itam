@@ -1,17 +1,32 @@
 # context_processors.py
+from django.core.cache import cache
 from .models import BusinessInfo
 from notifications.models import Notification
 
 
+def get_cached_business_info():
+    """Cache business info for 5 minutes"""
+    cache_key = 'business_info_active'
+    business = cache.get(cache_key)
+    if business is None:
+        business = BusinessInfo.objects.filter(is_active=True).first()
+        cache.set(cache_key, business, 300)  # Cache for 5 minutes
+    return business
+
+
 def business_context(request):
-    business = BusinessInfo.objects.filter(is_active=True).first()
+    business = get_cached_business_info()
     
     unread_notifications_count = 0
     if request.user.is_authenticated:
-        unread_notifications_count = Notification.objects.filter(
-            recipient=request.user,
-            is_read=False
-        ).count()
+        cache_key = f'unread_count_{request.user.id}'
+        unread_notifications_count = cache.get(cache_key)
+        if unread_notifications_count is None:
+            unread_notifications_count = Notification.objects.filter(
+                recipient=request.user,
+                is_read=False
+            ).count()
+            cache.set(cache_key, unread_notifications_count, 60)  # Cache for 1 minute
     
     primary_color = business.primary_color if business else '#DA291C'
     secondary_color = business.secondary_color if business and business.secondary_color else '#FFBD0A'

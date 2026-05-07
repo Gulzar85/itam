@@ -12,7 +12,7 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView
-from django.db.models import Q, Count
+from django.db.models import Count
 from services.permissions import ITAdminRequiredMixin, ManagerOrAdminRequiredMixin
 
 from accounts.models import User
@@ -21,6 +21,7 @@ from equipment.models import Equipment, EquipmentLog, MaintenanceRecord, Vendor
 from .forms import ITRequestForm
 from .models import Assignment, Request, RequestLog
 from services.request_service import RequestService
+from services.request_workflow import can_actor_transition, get_valid_statuses
 
 logger = logging.getLogger(__name__)
 
@@ -117,15 +118,18 @@ class RequestActionView(LoginRequiredMixin, View):
 
         user = cast(User, request.user)
 
-        # Permission Logic using ManagerOrAdminRequiredMixin logic
-        is_manager = (request_obj.user.manager_id == user.id) if request_obj.user.manager else False
-        is_it_admin = (hasattr(user, 'role') and user.role == 'IT_ADMIN')
-
-        if not (is_manager or is_it_admin):
-            return JsonResponse({'status': 'error', 'message': 'Permission Denied'}, status=403)
-
         if not new_status:
             return JsonResponse({'status': 'error', 'message': 'New status is required'}, status=400)
+
+        valid_statuses = get_valid_statuses()
+        if new_status not in valid_statuses:
+            return JsonResponse({'status': 'error', 'message': 'Invalid status'}, status=400)
+
+        if not can_actor_transition(user, request_obj, new_status):
+            return JsonResponse({
+                'status': 'error',
+                'message': 'You are not allowed to apply this transition.'
+            }, status=403)
 
         try:
             # Service call handles the status change and log creation
@@ -143,13 +147,25 @@ class RequestActionView(LoginRequiredMixin, View):
             })
         except Exception as e:
             logger.error(f"Request status update failed for {pk}: {str(e)}")
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+            return JsonResponse({'status': 'error', 'message': 'Unable to update request status.'}, status=500)
 
 
 class RequestDetailView(LoginRequiredMixin, DetailView):
     model = Request
     template_name = 'requests/request_detail.html'
     context_object_name = 'req'
+
+    def get_queryset(self):
+        user = cast(User, self.request.user)
+        queryset = Request.objects.select_related(
+            'user', 'equipment', 'category_needed', 'brand_preference', 'user__manager'
+        )
+
+        if user.role == 'IT_ADMIN' or user.is_staff:
+            return queryset
+        if getattr(user, 'can_approve', False):
+            return queryset.filter(Q(user=user) | Q(user__manager=user)).distinct()
+        return queryset.filter(user=user)
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -245,7 +261,8 @@ class RequestAssignmentView(LoginRequiredMixin, ITAdminRequiredMixin, View):
             )
             return JsonResponse({'status': 'success'})
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+            logger.error(f"Request assignment failed for {pk}: {str(e)}")
+            return JsonResponse({'status': 'error', 'message': 'Unable to assign equipment.'}, status=500)
 
 
 class ManagerApprovalView(LoginRequiredMixin, ManagerOrAdminRequiredMixin, ListView):
@@ -335,7 +352,7 @@ class ProcessMaintenanceView(LoginRequiredMixin, ITAdminRequiredMixin, View):
 
         except Exception as e:
             logger.error(f"Maintenance process failed for {pk}: {str(e)}")
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+            return JsonResponse({'status': 'error', 'message': 'Unable to process maintenance request.'}, status=500)
 
 
 class CompleteMaintenanceView(LoginRequiredMixin, ITAdminRequiredMixin, View):
@@ -394,4 +411,4 @@ class CompleteMaintenanceView(LoginRequiredMixin, ITAdminRequiredMixin, View):
             logger.error(f"Complete maintenance failed for {pk}: {str(e)}")
             messages.success(
                 request, "Maintenance record updated and asset returned to employee.")
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+            return JsonResponse({'status': 'error', 'message': 'Unable to complete maintenance.'}, status=400)

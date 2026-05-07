@@ -1,5 +1,6 @@
 from django.db import models, transaction
 from django.conf import settings
+from django.core.validators import FileExtensionValidator
 from decimal import Decimal
 import uuid
 import qrcode
@@ -114,7 +115,7 @@ class Equipment(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='assigned_equipment'
+        related_name='equipment_assigned'
     )
 
     purchase_date = models.DateField(null=True, blank=True)
@@ -123,7 +124,8 @@ class Equipment(models.Model):
     assigned_date = models.DateField(null=True, blank=True, help_text="Date when equipment was assigned")
 
     image = models.ImageField(
-        upload_to='equipment_pics/', null=True, blank=True)
+        upload_to='equipment_pics/', null=True, blank=True,
+        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'gif', 'bmp'])])
 
     qr_code = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
 

@@ -1,5 +1,6 @@
 from django import forms
 from crispy_forms.helper import FormHelper
+from core.forms.base import get_select, get_textarea, get_text_input
 from .models import Request
 from equipment.models import Equipment
 
@@ -9,26 +10,12 @@ class ITRequestForm(forms.ModelForm):
         model = Request
         fields = ['request_type', 'priority', 'category_needed', 'brand_preference', 'equipment', 'reason']
         widgets = {
-            'request_type': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
-            }),
-            'priority': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
-            }),
-            'category_needed': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
-            }),
-            'brand_preference': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
-            }),
-            'equipment': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'
-            }),
-            'reason': forms.Textarea(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all',
-                'rows': 4,
-                'placeholder': 'Please provide details about your request...'
-            }),
+            'request_type': get_select(),
+            'priority': get_select(),
+            'category_needed': get_select(),
+            'brand_preference': get_select(),
+            'equipment': get_select(),
+            'reason': get_textarea('Please provide details about your request...', rows=4),
         }
         labels = {
             'request_type': 'Request Type',

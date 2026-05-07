@@ -46,6 +46,17 @@ db.sqlite3-journal
 # Logs
 logs/
 *.log
+errors.txt
+test_output.txt
+
+# Temp/Debug files
+debug_*.py
+**/__pycache__/
+*.pyc
+
+# Backup files
+*.backup
+*.bak
 
 # IDE
 .idea/

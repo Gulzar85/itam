@@ -78,7 +78,7 @@ def notify_request_action(sender, instance, created, **kwargs):
     """
     if created:
         # Notify the action performer about successful action
-        if instance.action_by != instance.request.user:
+        if instance.action_by and instance.action_by != instance.request.user:
             Notification.objects.create(
                 recipient=instance.action_by,
                 notification_type='ACTION_PERFORMED',

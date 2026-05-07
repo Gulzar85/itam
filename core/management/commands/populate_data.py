@@ -7,6 +7,8 @@ from core.models import BusinessInfo, SocialMediaLink
 from notifications.models import Notification, NotificationTemplate
 from requests.models import Request, RequestLog, Assignment
 import random
+import secrets
+import os
 from datetime import date, timedelta
 
 User = get_user_model()
@@ -29,6 +31,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write('Populating ITAM system data...')
+        self.admin_password = os.getenv('ITAM_SEED_ADMIN_PASSWORD') or secrets.token_urlsafe(10)
+        self.manager_password = os.getenv('ITAM_SEED_MANAGER_PASSWORD') or secrets.token_urlsafe(10)
+        self.employee_password = os.getenv('ITAM_SEED_EMPLOYEE_PASSWORD') or secrets.token_urlsafe(10)
 
         departments = self.create_departments()
         it_admin, managers, employees = self.create_users(departments)
@@ -80,7 +85,7 @@ class Command(BaseCommand):
                 'is_superuser': True
             }
         )
-        it_admin.set_password('admin123')
+        it_admin.set_password(self.admin_password)
         it_admin.save()
 
         managers = []
@@ -105,7 +110,7 @@ class Command(BaseCommand):
                     'department': dept
                 }
             )
-            manager.set_password('manager123')
+            manager.set_password(self.manager_password)
             manager.save()
             managers.append(manager)
 
@@ -149,7 +154,7 @@ class Command(BaseCommand):
                     'phone_number': f'+1234567{random.randint(1000, 9999)}'
                 }
             )
-            emp.set_password('employee123')
+            emp.set_password(self.employee_password)
             emp.save()
             employees.append(emp)
 
@@ -667,8 +672,8 @@ class Command(BaseCommand):
         self.stdout.write(f'  - Assignments: {Assignment.objects.count()}')
         self.stdout.write('')
         self.stdout.write('Login credentials:')
-        self.stdout.write('  IT Admin: admin / admin123')
+        self.stdout.write(f'  IT Admin: admin / {self.admin_password}')
         self.stdout.write(
-            '  Manager:  manager_hr / manager123 (or manager_finance / manager123)')
+            f'  Manager:  manager_hr / {self.manager_password} (or manager_finance / {self.manager_password})')
         self.stdout.write(
-            '  Employee: alice / employee123 (or any employee / employee123)')
+            f'  Employee: alice / {self.employee_password} (or any employee / {self.employee_password})')

@@ -28,8 +28,9 @@ class Command(BaseCommand):
                     recipient=admin,
                     title="Warranty Expiry Alert",
                     message=message,
-                    notification_type='SYSTEM',
-                    related_id=str(eq.id)
+                    notification_type='WARRANTY_EXPIRING',
+                    related_equipment=eq,
+                    defaults={'priority': 'HIGH'}
                 )
             count += 1
             

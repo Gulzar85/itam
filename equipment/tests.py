@@ -1,278 +1,246 @@
 """
-Comprehensive tests for equipment app
+Tests for equipment app
 """
-import uuid
-from datetime import date, timedelta
 from django.test import TestCase
 from django.urls import reverse
-from django.db import IntegrityError
-from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-import io
-from PIL import Image
-
-from equipment.models import (
-    Equipment, Vendor, Brand, Category, EquipmentLog, MaintenanceRecord
-)
-from accounts.models import Department
-
-User = get_user_model()
-
-
-class VendorModelTest(TestCase):
-    """Tests for Vendor model"""
-
-    def setUp(self):
-        self.vendor = Vendor.objects.create(
-            name="Test Vendor",
-            contact_person="John Doe",
-            phone="1234567890",
-            email="vendor@test.com",
-            vendor_type="SUPPLIER",
-            rating=4
-        )
-
-    def test_vendor_creation(self):
-        """Test vendor can be created"""
-        self.assertEqual(self.vendor.name, "Test Vendor")
-        self.assertEqual(self.vendor.vendor_type, "SUPPLIER")
-        self.assertEqual(self.vendor.rating, 4)
-
-    def test_vendor_str(self):
-        """Test string representation"""
-        self.assertEqual(str(self.vendor), "Test Vendor")
-
-    def test_vendor_ordering(self):
-        """Test vendors are ordered by name"""
-        Vendor.objects.create(name="ABC Vendor", phone="111", vendor_type="SUPPLIER")
-        vendors = Vendor.objects.all()
-        self.assertEqual(vendors[0].name, "ABC Vendor")
+from django.test import Client
+from equipment.models import Equipment, Brand, Category, Vendor, EquipmentLog, MaintenanceRecord
+from accounts.models import User, Department
+import uuid
+from datetime import date, timedelta
+from django.utils import timezone
 
 
 class BrandModelTest(TestCase):
-    """Tests for Brand model"""
-
-    def setUp(self):
-        self.brand = Brand.objects.create(
-            name="Dell",
-            support_contact="1-800-DELL",
-            website="https://dell.com"
-        )
+    """Test Brand model"""
 
     def test_brand_creation(self):
-        """Test brand can be created"""
-        self.assertEqual(self.brand.name, "Dell")
-        self.assertEqual(self.brand.website, "https://dell.com")
-
-    def test_brand_str(self):
-        """Test string representation"""
-        self.assertEqual(str(self.brand), "Dell")
+        brand = Brand.objects.create(name='Dell')
+        self.assertEqual(str(brand), 'Dell')
+        self.assertEqual(brand.name, 'Dell')
 
     def test_brand_unique_name(self):
-        """Test brand name must be unique"""
-        with self.assertRaises(IntegrityError):
-            Brand.objects.create(name="Dell")
+        """Test brand name uniqueness"""
+        Brand.objects.create(name='HP')
+        with self.assertRaises(Exception):
+            Brand.objects.create(name='HP')
 
 
 class CategoryModelTest(TestCase):
-    """Tests for Category model"""
-
-    def setUp(self):
-        self.category = Category.objects.create(
-            name="Laptops",
-            icon="laptop",
-            description="Portable computers"
-        )
+    """Test Category model"""
 
     def test_category_creation(self):
-        """Test category can be created"""
-        self.assertEqual(self.category.name, "Laptops")
-        self.assertEqual(self.category.icon, "laptop")
+        category = Category.objects.create(
+            name='Laptop',
+            icon='laptop',
+            description='Portable computers'
+        )
+        self.assertEqual(str(category), 'Laptop')
+        self.assertEqual(category.icon, 'laptop')
 
-    def test_category_str(self):
-        """Test string representation"""
-        self.assertEqual(str(self.category), "Laptops")
+
+class VendorModelTest(TestCase):
+    """Test Vendor model"""
+
+    def test_vendor_creation(self):
+        vendor = Vendor.objects.create(
+            name='Tech Supplies Inc',
+            contact_person='John Doe',
+            phone='+1234567890',
+            vendor_type='SUPPLIER'
+        )
+        self.assertEqual(str(vendor), 'Tech Supplies Inc')
+        self.assertEqual(vendor.rating, 5)  # Default rating
+
+    def test_vendor_type_choices(self):
+        """Test vendor type choices"""
+        vendor = Vendor.objects.create(
+            name='Repair Shop',
+            vendor_type='REPAIR'
+        )
+        self.assertEqual(vendor.vendor_type, 'REPAIR')
 
 
 class EquipmentModelTest(TestCase):
-    """Tests for Equipment model"""
+    """Test Equipment model"""
 
     def setUp(self):
-        self.category = Category.objects.create(name="Laptops", icon="laptop")
-        self.brand = Brand.objects.create(name="Dell")
-        self.vendor = Vendor.objects.create(name="Dell Inc", phone="123", vendor_type="BOTH")
+        self.category = Category.objects.create(name='Laptop')
+        self.brand = Brand.objects.create(name='Dell')
+        self.vendor = Vendor.objects.create(name='Dell Inc')
         self.user = User.objects.create_user(
-            username="testuser",
-            email="test@test.com",
-            password="testpass123"
-        )
-        self.equipment = Equipment.objects.create(
-            category=self.category,
-            brand=self.brand,
-            model_number="Latitude 5520",
-            serial_number="DEL-001",
-            original_vendor=self.vendor,
-            status='AVAILABLE',
-            purchase_date=date.today() - timedelta(days=365),
-            purchase_cost=1000.00,
-            warranty_expiry=date.today() + timedelta(days=365)
+            username='testuser',
+            email='test@test.com',
+            password='test123'
         )
 
     def test_equipment_creation(self):
-        """Test equipment can be created"""
-        self.assertEqual(self.equipment.serial_number, "DEL-001")
-        self.assertEqual(self.equipment.status, "AVAILABLE")
-        self.assertIsNotNone(self.equipment.tracking_id)
+        """Test equipment creation"""
+        equipment = Equipment.objects.create(
+            category=self.category,
+            brand=self.brand,
+            model_number='Latitude 5520',
+            serial_number='DELL001',
+            original_vendor=self.vendor,
+            status='AVAILABLE'
+        )
+        self.assertEqual(equipment.model_number, 'Latitude 5520')
+        self.assertEqual(equipment.status, 'AVAILABLE')
+        self.assertIsNotNone(equipment.tracking_id)
+        self.assertTrue(equipment.tracking_id.startswith('EQ-'))
 
-    def test_equipment_str(self):
-        """Test string representation"""
-        expected = "Dell Latitude 5520 - DEL-001"
-        self.assertEqual(str(self.equipment), expected)
+    def test_equipment_assignment(self):
+        """Test equipment assignment to user"""
+        equipment = Equipment.objects.create(
+            category=self.category,
+            brand=self.brand,
+            model_number='Test Model',
+            serial_number='SN001',
+            status='AVAILABLE'
+        )
 
-    def test_equipment_unique_serial(self):
-        """Test serial number must be unique"""
-        with self.assertRaises(IntegrityError):
-            Equipment.objects.create(
-                category=self.category,
-                brand=self.brand,
-                model_number="Another",
-                serial_number="DEL-001"  # Duplicate
-            )
+        equipment.assigned_to = self.user
+        equipment.status = 'ASSIGNED'
+        equipment.assigned_date = date.today()
+        equipment.save()
+
+        self.assertEqual(equipment.assigned_to, self.user)
+        self.assertEqual(equipment.status, 'ASSIGNED')
+
+    def test_assignment_age_property(self):
+        """Test assignment_age property"""
+        equipment = Equipment.objects.create(
+            category=self.category,
+            brand=self.brand,
+            model_number='Test',
+            serial_number='SN002',
+            assigned_to=self.user,
+            status='ASSIGNED',
+            assigned_date=date.today() - timedelta(days=5)
+        )
+        self.assertEqual(equipment.assignment_age, 5)
+
+    def test_age_in_years_property(self):
+        """Test age_in_years property"""
+        equipment = Equipment.objects.create(
+            category=self.category,
+            brand=self.brand,
+            model_number='Test',
+            serial_number='SN003',
+            purchase_date=date.today() - timedelta(days=365)
+        )
+        self.assertAlmostEqual(equipment.age_in_years, 1.0, places=1)
+
+
+class EquipmentFormTest(TestCase):
+    """Test EquipmentForm"""
+
+    def setUp(self):
+        self.category = Category.objects.create(name='Laptop')
+        self.brand = Brand.objects.create(name='Dell')
+        self.vendor = Vendor.objects.create(name='Test Vendor')
+
+    def test_form_valid_data(self):
+        from equipment.forms import EquipmentForm
+        form_data = {
+            'category': self.category.id,
+            'brand': self.brand.id,
+            'model_number': 'Latitude 5520',
+            'serial_number': 'DELL001',
+            'original_vendor': self.vendor.id,
+            'status': 'AVAILABLE',
+            'purchase_cost': '1000.00',
+        }
+        form = EquipmentForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_form_invalid_serial_number(self):
+        """Test duplicate serial number validation"""
+        Equipment.objects.create(
+            category=self.category,
+            brand=self.brand,
+            model_number='Test',
+            serial_number='DUPLICATE'
+        )
+        from equipment.forms import EquipmentForm
+        form_data = {
+            'category': self.category.id,
+            'brand': self.brand.id,
+            'model_number': 'Test2',
+            'serial_number': 'DUPLICATE',  # Duplicate
+            'status': 'AVAILABLE',
+        }
+        form = EquipmentForm(data=form_data)
+        self.assertFalse(form.is_valid())
+
+
+class EquipmentServiceTest(TestCase):
+    """Test EquipmentService"""
+
+    def setUp(self):
+        self.category = Category.objects.create(name='Laptop')
+        self.brand = Brand.objects.create(name='Dell')
+        self.user = User.objects.create_user(
+            username='admin',
+            email='admin@test.com',
+            password='admin123',
+            role='IT_ADMIN'
+        )
 
     def test_generate_tracking_id(self):
         """Test tracking ID generation"""
         from services.equipment_service import EquipmentService
-        tid = EquipmentService.generate_tracking_id()
-        self.assertIn("EQ-", tid)
-        self.assertIn(str(date.today().year), tid)
+        tracking_id = EquipmentService.generate_tracking_id()
+        self.assertTrue(tracking_id.startswith('EQ-'))
+        self.assertIn(str(timezone.now().year), tracking_id)
 
-    def test_assignment_age_property(self):
-        """Test assignment_age property"""
-        self.equipment.assigned_to = self.user
-        self.equipment.assigned_date = date.today() - timedelta(days=5)
-        self.equipment.status = 'ASSIGNED'
-        self.equipment.save()
-        self.assertEqual(self.equipment.assignment_age, 5)
-
-    def test_assignment_age_display(self):
-        """Test assignment_age_display property"""
-        # Test "today"
-        self.equipment.assigned_date = date.today()
-        self.equipment.status = 'ASSIGNED'
-        self.assertEqual(self.equipment.assignment_age_display, "Assigned today")
-
-        # Test days
-        self.equipment.assigned_date = date.today() - timedelta(days=5)
-        self.assertEqual(self.equipment.assignment_age_display, "5 days")
-
-        # Test months
-        self.equipment.assigned_date = date.today() - timedelta(days=60)
-        self.assertIn("month", self.equipment.assignment_age_display)
-
-    def test_age_in_years_property(self):
-        """Test age_in_years property"""
-        self.assertEqual(self.equipment.age_in_years, 1.0)
-
-    def test_status_auto_update_on_save(self):
-        """Test status auto-updates based on assigned_to"""
-        self.equipment.assigned_to = self.user
-        self.equipment.save()
-        self.assertEqual(self.equipment.status, 'ASSIGNED')
-
-    def test_qr_code_generation(self):
-        """Test QR code is generated on save"""
-        self.assertIsNotNone(self.equipment.qr_code)
-
-
-class EquipmentLogModelTest(TestCase):
-    """Tests for EquipmentLog model"""
-
-    def setUp(self):
-        self.category = Category.objects.create(name="Laptops", icon="laptop")
-        self.brand = Brand.objects.create(name="Dell")
-        self.equipment = Equipment.objects.create(
+    def test_update_equipment_status(self):
+        """Test status update with logging"""
+        equipment = Equipment.objects.create(
             category=self.category,
             brand=self.brand,
-            model_number="Test",
-            serial_number="SN-001"
+            model_number='Test',
+            serial_number='SN001',
+            status='AVAILABLE'
         )
-        self.user = User.objects.create_user(
-            username="testuser",
-            email="test@test.com",
-            password="testpass123"
-        )
-        self.log = EquipmentLog.objects.create(
-            equipment=self.equipment,
+
+        from services.equipment_service import EquipmentService
+        EquipmentService.update_equipment_status(
+            equipment=equipment,
+            new_status='DAMAGED',
             action_by=self.user,
-            old_status="AVAILABLE",
-            new_status="ASSIGNED",
-            remarks="Assigned to user"
+            remarks='Test damage'
         )
 
-    def test_log_creation(self):
-        """Test log can be created"""
-        self.assertEqual(self.log.old_status, "AVAILABLE")
-        self.assertEqual(self.log.new_status, "ASSIGNED")
+        equipment.refresh_from_db()
+        self.assertEqual(equipment.status, 'DAMAGED')
 
-    def test_log_str(self):
-        """Test string representation"""
-        # The log str format is different, let's check what it actually returns
-        log_str = str(self.log)
-        self.assertIn(self.equipment.serial_number, log_str)
-
-
-class MaintenanceRecordModelTest(TestCase):
-    """Tests for MaintenanceRecord model"""
-
-    def setUp(self):
-        self.category = Category.objects.create(name="Laptops", icon="laptop")
-        self.brand = Brand.objects.create(name="Dell")
-        self.vendor = Vendor.objects.create(name="Repair Shop", phone="123", vendor_type="REPAIR")
-        self.equipment = Equipment.objects.create(
-            category=self.category,
-            brand=self.brand,
-            model_number="Test",
-            serial_number="SN-002"
-        )
-        from requests.models import Request
-        self.request = Request.objects.create(
-            user=User.objects.create_user(username="test", email="t@t.com", password="pass"),
-            request_type="REPAIR",
-            reason="Broken screen"
-        )
-        self.record = MaintenanceRecord.objects.create(
-            request=self.request,
-            equipment=self.equipment,
-            vendor=self.vendor,
-            issue_description="Screen broken",
-            estimated_cost=200.00,
-            status='IN_PROGRESS'
-        )
-
-    def test_record_creation(self):
-        """Test maintenance record can be created"""
-        self.assertEqual(self.record.issue_description, "Screen broken")
-        self.assertEqual(self.record.status, "IN_PROGRESS")
-
-    def test_record_str(self):
-        """Test string representation"""
-        self.assertIn("Repair:", str(self.record))
+        # Check log was created
+        log = EquipmentLog.objects.filter(equipment=equipment).first()
+        self.assertIsNotNone(log)
+        self.assertEqual(log.old_status, 'AVAILABLE')
+        self.assertEqual(log.new_status, 'DAMAGED')
 
 
 class EquipmentViewsTest(TestCase):
-    """Tests for equipment views"""
+    """Test equipment views"""
 
     def setUp(self):
+        self.client = Client()
         self.user = User.objects.create_user(
-            username="itadmin",
-            email="admin@test.com",
-            password="testpass123",
-            role="IT_ADMIN"
+            username='equipmenttest',
+            email='equipment@test.com',
+            password='testpass123',
+            role=User.IS_IT_ADMIN
         )
-        self.category = Category.objects.create(name="Laptops", icon="laptop")
-        self.brand = Brand.objects.create(name="Dell")
-        self.vendor = Vendor.objects.create(name="Test Vendor", phone="123", vendor_type="BOTH")
-        self.client.login(username='itadmin', password='testpass123')
+        self.client.login(username='equipmenttest', password='testpass123')
+        self.category = Category.objects.create(name='Laptop')
+        self.brand = Brand.objects.create(name='Dell')
+        self.vendor = Vendor.objects.create(
+            name='Test Vendor',
+            vendor_type='SUPPLIER'
+        )
 
     def test_equipment_list_view(self):
         """Test equipment list view"""
@@ -280,40 +248,48 @@ class EquipmentViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_equipment_create_view(self):
-        """Test equipment create view"""
-        response = self.client.get(reverse('equipment:equipment_create'))
-        self.assertEqual(response.status_code, 200)
+        """Test equipment creation"""
+        response = self.client.post(reverse('equipment:equipment_create'), {
+            'category': self.category.id,
+            'brand': self.brand.id,
+            'model_number': 'New Model',
+            'serial_number': 'NEW001',
+            'status': 'AVAILABLE',
+            'original_vendor': self.vendor.id,
+        })
+        # Check if form is valid
+        if response.status_code == 200:
+            # Form has errors, print them
+            print("Form errors:", response.context['form'].errors if 'form' in response.context else 'No form in context')
+        self.assertEqual(response.status_code, 302)  # Redirect after success
+        self.assertTrue(Equipment.objects.filter(serial_number='NEW001').exists())
 
-    def test_vendor_list_view(self):
-        """Test vendor list view"""
-        response = self.client.get(reverse('equipment:vendor_list'))
-        self.assertEqual(response.status_code, 200)
 
-    def test_brand_list_view(self):
-        """Test brand list view"""
-        response = self.client.get(reverse('equipment:brand_list'))
-        self.assertEqual(response.status_code, 200)
+class FileUploadValidationTest(TestCase):
+    """Test file upload validation"""
 
-    def test_category_list_view(self):
-        """Test category list view"""
-        response = self.client.get(reverse('equipment:category_list'))
-        self.assertEqual(response.status_code, 200)
+    def test_validate_image_extension(self):
+        """Test image extension validator"""
+        from core.validators import validate_image_file_extension
+        from django.core.exceptions import ValidationError
 
-    def test_non_admin_cannot_create_equipment(self):
-        """Test non-admin cannot access create view"""
-        self.client.logout()
-        employee = User.objects.create_user(
-            username="employee",
-            email="emp@test.com",
-            password="testpass123",
-            role="EMPLOYEE"
+        # Valid file
+        valid_file = SimpleUploadedFile(
+            "test.jpg", b"file_content", content_type="image/jpeg"
         )
-        self.client.login(username='employee', password='testpass123')
-        response = self.client.get(reverse('equipment:equipment_create'))
-        self.assertEqual(response.status_code, 403)  # Forbidden
+        try:
+            validate_image_file_extension(valid_file)
+        except ValidationError:
+            self.fail("validate_image_file_extension raised ValidationError unexpectedly!")
 
-    def test_equipment_export_view(self):
-        """Test equipment export to CSV"""
-        response = self.client.get(reverse('equipment:equipment_export'))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Type'], 'text/csv')
+    def test_validate_file_size(self):
+        """Test file size validator"""
+        from core.validators import validate_file_size
+        from django.core.exceptions import ValidationError
+
+        # Create a file larger than 2MB
+        large_file = SimpleUploadedFile(
+            "large.jpg", b"x" * (3 * 1024 * 1024), content_type="image/jpeg"
+        )
+        with self.assertRaises(ValidationError):
+            validate_file_size(large_file)

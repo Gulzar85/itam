@@ -2,6 +2,7 @@ from django.db import transaction
 from django.utils import timezone
 from requests.models import Request, RequestLog
 from equipment.models import Equipment, EquipmentLog
+from services.request_workflow import can_actor_transition, get_valid_statuses
 
 
 class RequestService:
@@ -9,10 +10,17 @@ class RequestService:
     @transaction.atomic
     def update_request_status(request_obj, new_status, action_by, remarks="", equipment_obj=None):
         """
-        Universal handler for IT Asset Workflow.
-        Fix: Status will strictly follow the sequence without auto-jumping.
-        """
+    Universal handler for IT Asset Workflow.
+    Status transitions follow the defined workflow sequence.
+    """
         old_status = request_obj.status
+        valid_statuses = get_valid_statuses()
+        if new_status not in valid_statuses:
+            raise ValueError(f"Invalid status: {new_status}")
+        if old_status == new_status:
+            raise ValueError("Request is already in the specified status")
+        if not can_actor_transition(action_by, request_obj, new_status):
+            raise PermissionError("Actor is not allowed to apply this transition")
 
         # 1. NEW ASSIGNMENT LOGIC (For New/Replacement Requests)
         if equipment_obj and new_status == 'COMPLETED':

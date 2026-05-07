@@ -31,7 +31,7 @@ class EquipmentService:
         
         img = qr.make_image(fill_color="black", back_color="white")
         buffer = BytesIO()
-        img.save(buffer, 'PNG')
+        img.save(buffer, format='PNG')
         
         filename = f'qr-{equipment.tracking_id}.png'
         equipment.qr_code.save(filename, File(buffer), save=False)

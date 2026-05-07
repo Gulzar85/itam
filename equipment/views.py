@@ -123,9 +123,8 @@ class EquipmentDetailView(LoginRequiredMixin, DetailView):
 
         from requests.models import Assignment
         context['current_assignment'] = Assignment.objects.filter(
-            equipment=self.object,
-            returned_date__isnull=True
-        ).first()
+            equipment=self.object
+        ).order_by('-assigned_date').first()
 
         # Get maintenance history for this equipment
         from equipment.models import MaintenanceRecord
@@ -198,7 +197,7 @@ class EquipmentBulkActionView(LoginRequiredMixin, ITAdminRequiredMixin, View):
 
             return JsonResponse({'status': 'error', 'message': 'Invalid action'}, status=400)
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+            return JsonResponse({'status': 'error', 'message': 'Bulk action failed.'}, status=500)
 
 
 class EquipmentExportView(LoginRequiredMixin, ITAdminRequiredMixin, View):
@@ -257,14 +256,14 @@ class EquipmentStatusUpdateView(LoginRequiredMixin, ITAdminRequiredMixin, View):
 
 
 # Vendor Views
-class VendorListView(LoginRequiredMixin, ListView):
+class VendorListView(LoginRequiredMixin, ITAdminRequiredMixin, ListView):
     model = Vendor
     template_name = 'equipment/vendor_list.html'
     context_object_name = 'vendors'
     paginate_by = 10
 
 
-class VendorDetailView(LoginRequiredMixin, DetailView):
+class VendorDetailView(LoginRequiredMixin, ITAdminRequiredMixin, DetailView):
     model = Vendor
     template_name = 'equipment/vendor_detail.html'
     context_object_name = 'vendor'
@@ -294,14 +293,14 @@ class VendorDeleteView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageM
 
 
 # Brand Views
-class BrandListView(LoginRequiredMixin, ListView):
+class BrandListView(LoginRequiredMixin, ITAdminRequiredMixin, ListView):
     model = Brand
     template_name = 'equipment/brand_list.html'
     context_object_name = 'brands'
     paginate_by = 10
 
 
-class BrandDetailView(LoginRequiredMixin, DetailView):
+class BrandDetailView(LoginRequiredMixin, ITAdminRequiredMixin, DetailView):
     model = Brand
     template_name = 'equipment/brand_detail.html'
     context_object_name = 'brand'
@@ -345,14 +344,14 @@ class BrandDeleteView(LoginRequiredMixin, ITAdminRequiredMixin, SuccessMessageMi
 
 
 # Category Views
-class CategoryListView(LoginRequiredMixin, ListView):
+class CategoryListView(LoginRequiredMixin, ITAdminRequiredMixin, ListView):
     model = Category
     template_name = 'equipment/category_list.html'
     context_object_name = 'categories'
     paginate_by = 10
 
 
-class CategoryDetailView(LoginRequiredMixin, DetailView):
+class CategoryDetailView(LoginRequiredMixin, ITAdminRequiredMixin, DetailView):
     model = Category
     template_name = 'equipment/category_detail.html'
     context_object_name = 'category'
@@ -419,25 +418,22 @@ class DashboardReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView
         maint_query = MaintenanceRecord.objects.all()
 
         # Date helper
-        def parse_dt(date_str, end_of_day=False):
+        def parse_date(date_str):
             try:
-                dt = datetime.strptime(date_str, '%Y-%m-%d')
-                if end_of_day:
-                    dt = dt.replace(hour=23, minute=59, second=59)
-                return make_aware(dt)
+                return datetime.strptime(date_str, '%Y-%m-%d').date()
             except (ValueError, TypeError):
                 return None
 
-        start = parse_dt(start_date)
-        end = parse_dt(end_date, end_of_day=True)
+        start = parse_date(start_date)
+        end = parse_date(end_date)
 
         if start:
             eq_query = eq_query.filter(purchase_date__gte=start)
-            req_query = req_query.filter(created_at__gte=start)
+            req_query = req_query.filter(created_at__date__gte=start)
             maint_query = maint_query.filter(sent_date__gte=start)
         if end:
             eq_query = eq_query.filter(purchase_date__lte=end)
-            req_query = req_query.filter(created_at__lte=end)
+            req_query = req_query.filter(created_at__date__lte=end)
             maint_query = maint_query.filter(sent_date__lte=end)
 
         if category_id:
@@ -447,8 +443,7 @@ class DashboardReportView(LoginRequiredMixin, ITAdminRequiredMixin, TemplateView
         if status_filter:
             eq_query = eq_query.filter(status=status_filter)
 
-        # --- THE FIX: SET output_field AND MATCH TYPES ---
-        # purchase_cost is DecimalField, so default must be Decimal('0.00')
+        # Aggregate equipment statistics with proper type casting
         status_stats = eq_query.aggregate(
             total=Count('id'),
             available=Count('id', filter=Q(status='AVAILABLE')),
@@ -562,15 +557,14 @@ class ComprehensiveReportView(LoginRequiredMixin, ITAdminRequiredMixin, Template
 
         if start_date:
             try:
-                start = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
+                start = datetime.strptime(start_date, '%Y-%m-%d').date()
                 eq_query = eq_query.filter(purchase_date__gte=start)
             except (ValueError, TypeError):
                 pass
 
         if end_date:
             try:
-                end = make_aware(datetime.strptime(
-                    end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+                end = datetime.strptime(end_date, '%Y-%m-%d').date()
                 eq_query = eq_query.filter(purchase_date__lte=end)
             except (ValueError, TypeError):
                 pass
@@ -606,8 +600,7 @@ class ComprehensiveReportView(LoginRequiredMixin, ITAdminRequiredMixin, Template
         # Pre-fetch assignments to avoid N+1 and complex dictionary building
         from requests.models import Assignment
         assignments = Assignment.objects.filter(
-            equipment__in=eq_query,
-            returned_date__isnull=True
+            equipment__in=eq_query
         ).select_related('user', 'user__department')
 
         assignment_map = {a.equipment_id: a for a in assignments}
@@ -718,15 +711,14 @@ class MaintenanceHistoryReportView(LoginRequiredMixin, ITAdminRequiredMixin, Tem
 
         if start_date:
             try:
-                start = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
+                start = datetime.strptime(start_date, '%Y-%m-%d').date()
                 maint_query = maint_query.filter(sent_date__gte=start)
             except (ValueError, TypeError):
                 pass
 
         if end_date:
             try:
-                end = make_aware(datetime.strptime(
-                    end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+                end = datetime.strptime(end_date, '%Y-%m-%d').date()
                 maint_query = maint_query.filter(sent_date__lte=end)
             except (ValueError, TypeError):
                 pass
@@ -810,16 +802,15 @@ class RequestSummaryReportView(LoginRequiredMixin, ITAdminRequiredMixin, Templat
 
         if start_date:
             try:
-                start = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
-                req_query = req_query.filter(created_at__gte=start)
+                start = datetime.strptime(start_date, '%Y-%m-%d').date()
+                req_query = req_query.filter(created_at__date__gte=start)
             except (ValueError, TypeError):
                 pass
 
         if end_date:
             try:
-                end = make_aware(datetime.strptime(
-                    end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
-                req_query = req_query.filter(created_at__lte=end)
+                end = datetime.strptime(end_date, '%Y-%m-%d').date()
+                req_query = req_query.filter(created_at__date__lte=end)
             except (ValueError, TypeError):
                 pass
 
@@ -897,15 +888,14 @@ class VendorPerformanceReportView(LoginRequiredMixin, ITAdminRequiredMixin, Temp
 
         if start_date:
             try:
-                start = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
+                start = datetime.strptime(start_date, '%Y-%m-%d').date()
                 maint_query = maint_query.filter(sent_date__gte=start)
             except (ValueError, TypeError):
                 pass
 
         if end_date:
             try:
-                end = make_aware(datetime.strptime(
-                    end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+                end = datetime.strptime(end_date, '%Y-%m-%d').date()
                 maint_query = maint_query.filter(sent_date__lte=end)
             except (ValueError, TypeError):
                 pass
@@ -977,8 +967,10 @@ class DepartmentDistributionReportView(LoginRequiredMixin, ITAdminRequiredMixin,
             users = dept.user_set.all()
             total_users = users.count()
 
+            # Use assigned_date__isnull instead of returned_date
+            # Since returned_date was removed, we check for active assignments
             assigned = Assignment.objects.filter(
-                user__in=users, returned_date__isnull=True
+                user__in=users
             ).count()
 
             equipment_count = Equipment.objects.filter(
@@ -1042,16 +1034,15 @@ class RequestTurnaroundReportView(LoginRequiredMixin, ITAdminRequiredMixin, Temp
 
         if start_date:
             try:
-                start = make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
-                req_query = req_query.filter(created_at__gte=start)
+                start = datetime.strptime(start_date, '%Y-%m-%d').date()
+                req_query = req_query.filter(created_at__date__gte=start)
             except (ValueError, TypeError):
                 pass
 
         if end_date:
             try:
-                end = make_aware(datetime.strptime(
-                    end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
-                req_query = req_query.filter(created_at__lte=end)
+                end = datetime.strptime(end_date, '%Y-%m-%d').date()
+                req_query = req_query.filter(created_at__date__lte=end)
             except (ValueError, TypeError):
                 pass
 
