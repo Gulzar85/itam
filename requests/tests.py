@@ -350,3 +350,25 @@ class RequestViewsTest(TestCase):
             'reason': 'Need a laptop',
         })
         self.assertEqual(response.status_code, 302)  # Redirect after success
+
+    def test_request_without_manager_auto_approves(self):
+        """Test that request from user without manager auto-approves to MANAGER_APPROVED"""
+        # User has no manager (manager field is None by default)
+        response = self.client.post(reverse('requests:create'), {
+            'request_type': 'NEW',
+            'priority': 'LOW',
+            'category_needed': self.category.id,
+            'reason': 'No manager test',
+        })
+        self.assertEqual(response.status_code, 302)
+        
+        # Check the request was created with MANAGER_APPROVED status
+        from requests.models import Request
+        req = Request.objects.latest('created_at')
+        self.assertEqual(req.status, 'MANAGER_APPROVED')
+        
+        # Check log was created
+        from requests.models import RequestLog
+        log = req.logs.first()
+        self.assertIsNotNone(log)
+        self.assertEqual(log.new_status, 'MANAGER_APPROVED')

@@ -104,8 +104,36 @@ class RequestCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     def form_valid(self, form: ITRequestForm):
         obj = cast(Request, form.instance)
         obj.user = cast(User, self.request.user)
-        obj.status = 'PENDING'
-        return super().form_valid(form)
+        
+        # If user has no manager, skip manager approval and set status to MANAGER_APPROVED
+        if not self.request.user.manager:
+            obj.status = 'MANAGER_APPROVED'
+            messages.success(self.request, "Request submitted. No manager assigned - sent directly to IT Admin.")
+        else:
+            obj.status = 'PENDING'
+        
+        response = super().form_valid(form)
+        
+        # Create appropriate log entry
+        from requests.models import RequestLog
+        if not self.request.user.manager:
+            RequestLog.objects.create(
+                request=obj,
+                action_by=self.request.user,
+                old_status='PENDING',
+                new_status='MANAGER_APPROVED',
+                remarks="No manager assigned. Auto-approved for IT Admin review."
+            )
+        else:
+            RequestLog.objects.create(
+                request=obj,
+                action_by=self.request.user,
+                old_status='NONE',
+                new_status='PENDING',
+                remarks="Request submitted and awaiting manager approval."
+            )
+            
+        return response
 
 
 class RequestActionView(LoginRequiredMixin, View):
